@@ -15,7 +15,7 @@ from  utils.getMacd import stock_macd
 def update(stock_codes,content,date = 'all'):
     if date == 'all':
         now = datetime.now()
-        delta32 = timedelta(days=2000)
+        delta32 = timedelta(days=10)
         beg = (now - delta32).date().strftime('%Y%m%d')
     else:
         beg = datetime.now().date().strftime('%Y%m%d')
@@ -41,7 +41,7 @@ def deal(content,df,freq):
     # simple_path = content['simple_'+str(freq)+'_path']
     # deal_path = content['deal_'+str(freq)+'_path']
     # line_path = content['line_'+str(freq)+'_path']
-    day_path = content['normal']+str(freq)+'/'
+    day_path = content['normal']
     code = df.iat[1,1]+'.csv'
     if not os.path.exists(day_path + code):
         normal = pd.DataFrame(columns=['date','open','high','low','close','amount','vol'])

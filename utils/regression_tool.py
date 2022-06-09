@@ -68,7 +68,7 @@ def stock_macd(df) -> pd.DataFrame:
 
 
 def test(code,content):
-    real = pd.read_csv(content['normal'] + 'day/'+code)
+    real = pd.read_csv(content['normal'] +code)
     normal = real[:250]
 
 
@@ -76,11 +76,12 @@ def test(code,content):
     for i, row in real[250:].iterrows():
         normal = normal.append(row).reset_index(drop=True)
         date = normal['date'].iloc[-1]
-        if date == '2020-01-02':
-            print(1)
+        if date == '2019-09-19':
+            print('')
         if array_ma(normal):
             record = pd.DataFrame(columns=['date', 'key', 'flag', 'temp'])
-            print(normal['date'].iloc[-1])
+            print(code+'  '+normal['date'].iloc[-1])
+
         l = pd.DataFrame(
             {'code':code,'date': normal['date'].iloc[-1] }, index=[1])
         # if i ==5000:
