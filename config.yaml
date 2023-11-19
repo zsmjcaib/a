@@ -1,2 +1,22 @@
 normal:
-  '../data/day/'
+  '/Users/zsmjcaib/Desktop/code/data/day/'
+week:
+  '/Users/zsmjcaib/Desktop/code/data/week/'
+week_simple:
+  '/Users/zsmjcaib/Desktop/code/data/week_simple/'
+result:
+  '/Users/zsmjcaib/Desktop/code/data/result2/'
+rpsinfo_50:
+  '/Users/zsmjcaib/Desktop/code/data/rps/rpsinfo_50.csv'
+rpsinfo_250:
+  '/Users/zsmjcaib/Desktop/code/data/rps/rpsinfo_250.csv'
+rpsinfo_120:
+  '/Users/zsmjcaib/Desktop/code/data/rps/rpsinfo_120.csv'
+rps_50:
+  '/Users/zsmjcaib/Desktop/code/data/rps/rps_50.csv'
+rps_250:
+  '/Users/zsmjcaib/Desktop/code/data/rps/rps_250.csv'
+rps_120:
+  '/Users/zsmjcaib/Desktop/code/data/rps/rps_120.csv'
+performance:
+    '/Users/zsmjcaib/Desktop/code/data/performance/'

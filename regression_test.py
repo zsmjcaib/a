@@ -1,7 +1,7 @@
 import pandas as pd
 import yaml
 import os
-from utils.regression_tool import test
+from utils.regression_tool import rps_info
 
 
 if __name__ == '__main__':
@@ -13,6 +13,7 @@ if __name__ == '__main__':
         # for code in os.listdir(path):
         #     if test(code, content):
         #         i+=1
-        # print(i)
+        #         if i%500==0:
+        #             print(i)
         test('600031.csv', content)
 
