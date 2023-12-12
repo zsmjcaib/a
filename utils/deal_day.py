@@ -76,7 +76,7 @@ def  find(df, df_point,max_list,min_list,ignore_list):
 
             # a=df.iloc[index]["date"]
             # print(a)
-            # if(df.iloc[index]["date"] == '2022-3-3 09:35'):
+            # if(df.iloc[index]["date"] == '2023-04-20 00:00'):
             #     print("1")
             if index in ignore_list:
                 continue

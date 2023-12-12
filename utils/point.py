@@ -18,6 +18,8 @@ def simpleTrend(df,df_simple):
 
 def compare(dfSimple,tem_data) -> pd.DataFrame:
     for index,row in tem_data.iterrows():
+        # if str(row['date']) == '2023-04-21 00:00:00':
+        #     print(1)
         dfSimple =calculation(row,dfSimple)
     return dfSimple
 

@@ -17,7 +17,7 @@ def evaluates(df, index):
 
         if end_price / price > 1.4:
             return 1
-        elif end_price / price < 0.94:
+        elif end_price / price < 0.92:
             high = df.iloc[index+1:i]['close'].max()
             if high / price >1.3:
                 return 2
@@ -34,7 +34,7 @@ def evaluates(df, index):
                 if min >= endd_price:
                     min = endd_price
 
-                    if endd_price / price < 0.89:
+                    if endd_price / price < 0.88:
                         if max / price > 1.4:
                             return 12
                         if max / price > 1.3:
@@ -101,12 +101,18 @@ def get_condition_2(data,close,index,end_index):
 def get_roe(data,index,end_index):
     return  round((data.iloc[end_index]['close'] / data.iloc[index + 1]['open'] - 1) * 100, 1)
 
+
 def test(content, date, code, evaluate_result):
     data = pd.read_csv(content['normal'] + code + '.csv')
     index = data[data["date"] == date].index[0]
     evaluate = evaluates(data, index)
     close = data.iloc[index]['close']
 
+
+    vol = str(round(data.iloc[index]['vol']/data.iloc[index-50:index]['vol'].mean(),2))
+    zt = '0'
+    if data.iloc[index]['close'] == data.iloc[index]['high']:
+        zt = '1'
     end_index = index + 4
     if data.iloc[index + 1]['close'] < data.iloc[index + 1]['open']:#第一天阴
         if data.iloc[index + 2]['rate'] <= 0 or data.iloc[index + 2]['close'] <= data.iloc[index + 2]['open']: #第二天阴或降
@@ -116,8 +122,9 @@ def test(content, date, code, evaluate_result):
             roe = str(get_roe(data,index,index + 2))
             length = evaluate_result.shape[0]
             evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate, "condition_1": condition_1,
-                                           "condition_2": condition_2, "roe": roe}
-            print(code + ' ' + date + ' ' + str(evaluate)+' '+condition_1+' ' +condition_2+' ' +roe)
+                                           "condition_2": condition_2, "roe": roe, "vol": vol, "zt": zt}
+            print(code + ' ' + date + ' ' + str(
+                evaluate) + ' ' + condition_1 + ' ' + condition_2 + ' ' + roe + ' ' + vol + ' ' + zt)
 
             return
 
@@ -129,8 +136,9 @@ def test(content, date, code, evaluate_result):
             roe = str(get_roe(data,index,index + 3))
             length = evaluate_result.shape[0]
             evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate, "condition_1": condition_1,
-                                           "condition_2": condition_2, "roe": roe}
-            print(code + ' ' + date + ' ' + str(evaluate)+' '+condition_1+' ' +condition_2+' ' +roe)
+                                           "condition_2": condition_2, "roe": roe, "vol": vol, "zt": zt}
+            print(code + ' ' + date + ' ' + str(
+                evaluate) + ' ' + condition_1 + ' ' + condition_2 + ' ' + roe + ' ' + vol + ' ' + zt)
 
             return
 
@@ -141,13 +149,13 @@ def test(content, date, code, evaluate_result):
         roe = str(get_roe(data, index, index + 3))
         length = evaluate_result.shape[0]
         evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate, "condition_1": condition_1,
-                                           "condition_2": condition_2, "roe": roe}
-        print(code + ' ' + date + ' ' + str(evaluate) + ' ' + condition_1 + ' ' + condition_2 + ' ' + roe)
+                                           "condition_2": condition_2, "roe": roe,"vol":vol,"zt":zt}
+        print(code + ' ' + date + ' ' + str(evaluate) + ' ' + condition_1 + ' ' + condition_2 + ' ' + roe+' '+vol+' '+zt)
 
         return
 
 if __name__ == '__main__':
-    evaluate_result = pd.DataFrame(columns=['code', 'date', 'result','condition_1','condition_2','roe'])
+    evaluate_result = pd.DataFrame(columns=['code', 'date', 'result','condition_1','condition_2','roe','vol','zt'])
 
 
     # code = '002581'
@@ -160,7 +168,7 @@ if __name__ == '__main__':
 
 
 
-    df=pd.read_csv('/Users/zsmjcaib/Desktop/code/data/result2/result+10.csv',dtype=str) #24 23
+    df=pd.read_csv('/Users/zsmjcaib/Desktop/code/data/result2/result+22.csv',dtype=str) #24 23
     for index,row in df.iterrows():
         code = row['code']
         s = '000000'
@@ -173,4 +181,4 @@ if __name__ == '__main__':
             date_str = date.strftime('%Y-%m-%d')
         except:date_str = date
         test(content,date_str,code,evaluate_result)
-    evaluate_result.to_csv(content['result'] + 'result+16.csv', index=False)
+    evaluate_result.to_csv(content['result'] + 'result+222.csv', index=False)
