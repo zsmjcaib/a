@@ -34,15 +34,15 @@ def pocket(content):
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
     evaluate_result = pd.DataFrame(columns=['code', 'date', 'result'])
-    for date, codelist in rps_250.iloc[:, -8:].iteritems():
+    for date, codelist in rps_250.iloc[:, -1:].iteritems():
         # codelist = pd.append([ rps_120[date].iloc[:400], rps_250[date].iloc[:400]]).drop_duplicates(inplace=True)
         codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            if  code == '688578':
-                # print(1)
-                pass
+            # if  code == '600369' and date=='2019-04-10':
+            #     print(1)
+            #     pass
             try:
                 index = df[df["date"] == date].index[0]
             except:
@@ -90,7 +90,12 @@ def pocket(content):
             # 参数2可以
             condition = (df['low'].iloc[index - 30:index] < df['ma200'].iloc[index - 30:index] * 1.05)
             if condition.any():
-                continue
+                if not (close > df.iloc[index - 200:index - 40]['close'].max() * 1.2
+                        and (df.iloc[index - 20:index]['close'] < df.iloc[index - 20:index]['ma20']).sum() == 0
+                        and (df.iloc[index - 20:index]['ma5'] < df.iloc[index - 20:index]['ma10'] * 0.99).sum() == 0
+                        and (df.iloc[index - 30:index]['rate'] > 5).sum() > 2):
+                    continue
+
 
             # # 要改 参数2可以
             condition_3 = (df['open'].iloc[index - 2:index + 1] < df['ma10'].iloc[index - 2:index + 1] * 1.02)
@@ -194,6 +199,20 @@ def pocket(content):
                 if df.iloc[last_index]['open'] > df.iloc[last_index]['close'] * 1.07 and \
                         df.iloc[last_index - 3:last_index]['rate'].max() > 8:
                     continue
+
+            lst = []
+            for i in range(index - 30, index - 2):
+                if df.iloc[i]['high'] == df.iloc[i - 2:i + 3]['high'].max() and high * 1.02 > df.iloc[i]['high'] > high * 0.98:
+                    lst.append(i)
+            j = 0
+            while j < len(lst) - 1:
+                if lst[j + 1] == lst[j] + 1:
+                    lst.pop(j)
+                else:
+                    j += 1
+            if len(lst) > 2:
+                continue
+
             # 影响小 参数2还可以
             if close > ma120 * 1.05:
                 if vol_20 < vol or vol_30 < vol or rate > 9.8:
@@ -225,6 +244,18 @@ def pocket(content):
             if ma20_sum == 0 and (ma20_close < 3 or negative_sum < -0.1):
                 continue
 
+            if df.iloc[index]['amount'] < df.iloc[index - 51:index]['amount'].max() * 0.4 and close != df.iloc[index]['high']:
+                continue
+            if df.iloc[index]['amount'] < df.iloc[index - 51:index]['amount'].max() * 0.3 and close < df.iloc[index - 51:index]['close'].max():
+                continue
+
+            if df.iloc[index]['high'] != close and close < df.iloc[index - 16:index]['high'].max() * 1.03 and \
+                    close > df.iloc[index - 251:index]['high'].max() and df.iloc[index]['rate'] < 10.5:
+                test_index = df.iloc[index - 16:index]['high'].idxmax()
+                if df.iloc[test_index]['close'] * 1.05 < close and df.iloc[test_index]['close'] * 1.03 <df.iloc[test_index]['high'] \
+                        and df.iloc[test_index]['open'] * 1.03 < df.iloc[test_index]['high']:
+                        continue
+
             high_date = df.loc[high_index, 'date']
             week = pd.read_csv(content['week'] + code + '.csv')
 
@@ -244,12 +275,15 @@ def pocket(content):
                     boolean, multiple, start_date = price_change(week[:week_index], week_deal)
 
                     if not boolean:
-                        # remarks = last_check(df, index)
-                        # print(code + ' ' + date + ' ' + str(evaluate) + ' ' + remarks)
-                        # length = evaluate_result.shape[0]
-                        # evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
-                        #                                "remarks": remarks}
-                        continue
+                        if start_date == 1 and close < df.iloc[index - 400:index - 16]['high'].max() * 1.1:
+                            continue
+                        if start_date == 2:
+                            condition = (week.iloc[week_index - 20:week_index]['ma20'] <
+                                         week.iloc[week_index - 20:week_index]['ma30'] * 1.02).sum()
+                            condition_2 = (week.iloc[week_index - 20:week_index]['ma30'] <
+                                           week.iloc[week_index - 20:week_index]['ma50'] * 1.02).sum()
+                            if condition != 0 or condition_2 != 0:
+                                continue
                     simple = df.iloc[index - 250:index - 240, 0:7].copy()
                     deal = simpleTrend(df[index - 240:index], simple)
                     simple = pd.DataFrame(columns=['date', 'key', 'flag', 'temp'])
@@ -382,20 +416,20 @@ def pocket(content):
                 #             df.iloc[index]['rate'] > 9.8)):
                 #     if multiple < 2.5:
 
-                print(code + ' ' + date )
+                # print(code + ' ' + date )
 
 
-            #     evaluate = evaluates(df, index)
-            #     remarks = last_check(df, index)
-            #     remarks_1, remarks_2 = last_check_1(df, index)
-            #     print(code + ' ' + date + ' ' + str(evaluate) + ' ' + remarks + ' ' + remarks_1 + ' ' + remarks_2)
-            #     new = pd.DataFrame(
-            #         {"code": code, "date": date, "result": evaluate, "remarks": remarks, "remarks_1": remarks_1,
-            #          "remarks_2": remarks_2}, index=[1])
-            #
-            #     evaluate_result = evaluate_result.append(new, ignore_index=True)
-            #
-            # evaluate_result.to_csv(content['result'] + 'result+666.csv', index=False)
+                evaluate = evaluates(df, index)
+                remarks = last_check(df, index)
+                remarks_1, remarks_2 = last_check_1(df, index)
+                print(code + ' ' + date + ' ' + str(evaluate) + ' ' + remarks + ' ' + remarks_1 + ' ' + remarks_2)
+                new = pd.DataFrame(
+                    {"code": code, "date": date, "result": evaluate, "remarks": remarks, "remarks_1": remarks_1,
+                     "remarks_2": remarks_2}, index=[1])
+
+                evaluate_result = evaluate_result.append(new, ignore_index=True)
+
+            evaluate_result.to_csv(content['result'] + 'result+222.csv', index=False)
 
 
 
@@ -411,7 +445,7 @@ def evaluates(df, index):
         if end_price / price > 1.45:
             return 1
         elif end_price / price < 0.94:
-            high = df.iloc[index + 1:i]['close'].max()
+            high = df.iloc[index + 2:i]['close'].max()
             high_index = df.iloc[index + 1:i]['close'].idxmax() - index
             if high / price > 1.35:
                 return 2
@@ -1129,7 +1163,7 @@ def week_tight1(week, code, date, high_date, rate):
     week_30 = week.loc[index, 'ma30']
     week_50 = week.loc[index, 'ma50']
 
-    if week_30 *0.99 > week_50:
+    if week_30 *0.98 > week_50:
         pass
     else:
         return
@@ -1174,7 +1208,7 @@ def price_change(week, week_deal):
     # rate = week_deal.iloc[deal_high_index]['rate']
 
     if len(deal_high_index_list) == 0 or (result['key']<0).any():
-        return False, 0, 0
+        return False, 0, 1
     deal_high_index = deal_high_index_list[-1]
     high = week_deal.iloc[deal_high_index]['key']
     start = week_deal.iloc[deal_high_index - 1]['key']
@@ -1198,7 +1232,7 @@ def price_change(week, week_deal):
         flag = 1
 
     if low / start<1.3 :
-        return False, '111', start_date
+        return False, '111', 2
 
 
 

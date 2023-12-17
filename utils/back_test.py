@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
 
 
-    df=pd.read_csv('/Users/zsmjcaib/Desktop/code/data/result2/result+22.csv',dtype=str) #24 23
+    df=pd.read_csv('/Users/zsmjcaib/Desktop/code/data/result2/result+1.csv',dtype=str) #24 23
     for index,row in df.iterrows():
         code = row['code']
         s = '000000'
@@ -181,4 +181,4 @@ if __name__ == '__main__':
             date_str = date.strftime('%Y-%m-%d')
         except:date_str = date
         test(content,date_str,code,evaluate_result)
-    evaluate_result.to_csv(content['result'] + 'result+222.csv', index=False)
+    evaluate_result.to_csv(content['result'] + 'result+11.csv', index=False)
