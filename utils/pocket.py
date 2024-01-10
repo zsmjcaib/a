@@ -75,6 +75,10 @@ def pocket(content):
             max_20 = df.iloc[index - 21:index - 17]['close'].max()
             last_close = df.loc[index - 1, 'close']
 
+            if (df.iloc[index - 20:index]['close'] < df.iloc[index - 20:index]['ma120']).any():
+                if df.iloc[index]['ma120'] < df.iloc[index]['ma250'] * 1.25 and close < df.iloc[index]['ma250'] * 1.45:
+                    continue
+
             if high / last_close > 1.096 and rate < 8 and df.iloc[index]['vol'] < df.iloc[index - 50:index - 1][
                 'vol'].max() * 0.85 and close < df.iloc[index - 50:index - 1]['close'].max() * 1.03:
                 continue
@@ -85,7 +89,8 @@ def pocket(content):
             if ((high / data_max + data_min / low - 2) > (close - open) / close and high != data_max and (
                     data_min / low - 1) < (high / data_max - 1) * 3) or (
                     (high / data_max) + (data_min / low) - 2) > 0.08:  #
-                continue
+                if data_min / low > 1.01:
+                    continue
 
             # 参数2可以
             condition = (df['low'].iloc[index - 30:index] < df['ma200'].iloc[index - 30:index] * 1.05)
@@ -111,7 +116,7 @@ def pocket(content):
                 if low_close_20 * 1.2 < close:
                     continue
             low_250 = df.iloc[index - 250:index - 1]['close'].min()
-            if low_250 > df.iloc[index - 1]['close'] * 0.65:
+            if low_250> df.iloc[index]['close']*0.58 and low_250> df.iloc[index-1]['close']*0.64:
                 continue
 
             ma120_list = df.iloc[index - 10:index - 1]['ma120']
@@ -138,6 +143,21 @@ def pocket(content):
                     score += 1
 
             if score > 4:  # 4
+                continue
+
+            if (df.iloc[index - 5:index]['open'] / df.iloc[index - 5:index]['close']).max() > 1.05:
+                if (df.iloc[index - 4:index]['low'] > df.iloc[index - 4:index]['ma20']).all() and not (
+                        (df.iloc[index - 3:index]['ma5'] > df.iloc[index - 3:index]['ma10']).all() or not (
+                        df.iloc[index - 3:index]['ma10'] > df.iloc[index - 3:index]['ma20']).all()):
+                    continue
+                if (df.iloc[index - 5:index]['low'] / df.iloc[index - 5:index]['ma20']).min() < 1.02 and df.iloc[index][
+                    'high'] != df.iloc[index]['close']:
+                    continue
+
+            if close > df.iloc[index - 60:index]['high'].max() and df.iloc[index]['vol'] < df.iloc[index - 40:index][
+                'vol'].mean() * 2.5 \
+                    and (close != df.iloc[index]['high'] or df.iloc[index]['rate'] < 9.5) and df.iloc[index][
+                'vol'] < 250000000 and df.iloc[index]['amount'] < df.iloc[index - 10:index]['amount'].max() * 1.1:
                 continue
 
             min_5 = df.iloc[index - 5:index - 1]['close'].min()
@@ -200,6 +220,19 @@ def pocket(content):
                         df.iloc[last_index - 3:last_index]['rate'].max() > 8:
                     continue
 
+            if df.iloc[index - 60:index]['high'].max() * 0.9 < df.iloc[index]['close'] < df.iloc[index - 60:index][
+                'high'].max():
+                max_5_index = df.iloc[index - 60:index]['high'].nlargest(8).index
+                if (df.iloc[max_5_index]['high'] / df.iloc[max_5_index][['open', 'close']].max(
+                        axis=1) > 1.05).sum() > 1 and \
+                        (df.iloc[max_5_index]['high'] / df.iloc[max_5_index][['open', 'close']].max(
+                            axis=1) > 1.03).sum() > 3:
+                    continue
+            if df.iloc[index - 2]['rate'] > 5 and df.iloc[index]['high'] != df.iloc[index]['close'] and df.iloc[index]['rate']<15:
+                if df.iloc[index - 1]['high'] / df.iloc[index - 1]['close'] > 1.02 and df.iloc[index - 1]['open'] >df.iloc[index - 1]['close'] \
+                        and df.iloc[index - 1]['open'] / df.iloc[index - 1]['low'] > 1.02:
+                    continue
+
             lst = []
             for i in range(index - 30, index - 2):
                 if df.iloc[i]['high'] == df.iloc[i - 2:i + 3]['high'].max() and high * 1.02 > df.iloc[i]['high'] > high * 0.98:
@@ -219,8 +252,7 @@ def pocket(content):
                     pass
                 if result.empty:
                     pass
-                elif vol > result['vol'].max() * 1.4 or ((rate > 9.8 and code[:3] != '688' and code[:3] != '300') or
-                                                         (rate > 18 and (code[:3] == '688' or code[:3] == '300'))) or \
+                elif vol > result['vol'].max() * 1.4 or ((rate > 9.8 and close == high) or rate > 18) \
                         (vol > 3000000000 and vol > vol_last_5):
                     pass
                 else:
@@ -275,7 +307,7 @@ def pocket(content):
                     boolean, multiple, start_date = price_change(week[:week_index], week_deal)
 
                     if not boolean:
-                        if start_date == 1 and close < df.iloc[index - 400:index - 16]['high'].max() * 1.1:
+                        if start_date == 1 and close<df.iloc[index-250:index-6]['high'].max()*1.1:
                             continue
                         if start_date == 2:
                             condition = (week.iloc[week_index - 20:week_index]['ma20'] <
@@ -368,7 +400,7 @@ def pocket(content):
                 ma120_list = df.loc[index - 10:index, 'ma120']
                 ma120_results = (ma120_list / ma120_list.shift(2) - 1)[1:] * 100
                 ma120_result = (ma120_results < 0).sum()
-                if ma120_result > 7 or ma250 > ma120:
+                if ma120_result > 7 :
                     continue
                 # if close<ma120 or close<ma250 or ma250>ma120 or ma50<ma120 or ma50<ma250 or close < year_low * 1.3:
 
@@ -429,7 +461,7 @@ def pocket(content):
 
                 evaluate_result = evaluate_result.append(new, ignore_index=True)
 
-            evaluate_result.to_csv(content['result'] + 'result+222.csv', index=False)
+            evaluate_result.to_csv(content['result'] + 'result+100.csv', index=False)
 
 
 
@@ -1160,13 +1192,39 @@ def week_tight(week, code, date, high_date, rate):
 def week_tight1(week, code, date, high_date, rate):
     index = week[week["date"] >= date].index[0]
 
+    start_1_index = week.iloc[index - 16:index]['close'].idxmin()
+    start_2_index = week.iloc[index - 16:index]['open'].idxmin()
+    start_1 = week.iloc[index - 16:index]['close'].min()
+    start_2 = week.iloc[index - 16:index]['open'].min()
+    start_index = start_1_index if start_1 < start_2 else start_2_index
+    end = week.iloc[start_index:index]['close'].idxmax()
+    rate_index = week.iloc[start_index:index]['rate'].idxmax()
+    rate_dif = week.iloc[rate_index]['close'] - week.iloc[rate_index - 1]['close']
+    if (week.iloc[start_index:index]['rate'].max() > 20 and (
+            (week.iloc[end]['close'] - rate_dif) / week.iloc[start_index]['open'] - 1) * 100 < 10) or \
+            (week.iloc[start_index:index]['rate'].max() > 35 and (
+                    (week.iloc[index]['close'] - rate_dif) / week.iloc[start_index]['open'] - 1) * 100 < 25):
+        return
+
+    if (week.iloc[index - 6:index]['high'] / week.iloc[index - 6:index][['open', 'close']].max(axis=1)).nlargest(
+            4).min() > 1.05 \
+            and week.iloc[index - 2]['high'] != week.iloc[index - 6:index]['high'].max() and week.iloc[index - 6:index][
+        'high'].max() == week.iloc[index - 20:index]['high'].max():
+        return
+
+    t = (week.iloc[index-4:index]['high']/week.iloc[index-4:index][['open', 'close']].max(axis=1)).nlargest(4).sort_values(ascending=True).reset_index(drop=True)
+    if t.min()>1.03 and week.iloc[index-4:index]['high'].max()>week.iloc[index-20:index-8]['high'].max() and\
+           not (week.iloc[index-4]['close']<week.iloc[index-2]['close'] and week.iloc[index-3]['close']<week.iloc[index-1]['close']):
+        return
+
     week_30 = week.loc[index, 'ma30']
     week_50 = week.loc[index, 'ma50']
 
     if week_30 *0.98 > week_50:
         pass
     else:
-        return
+        if week_50 < week.loc[index - 1, 'ma50'] * 1.01 or week_30 < week.loc[index - 1, 'ma30'] * 1.02:
+            return
 
     high_index = week[week["date"] >= high_date].index[0]
     if index == high_index: return  True
