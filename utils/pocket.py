@@ -34,13 +34,12 @@ def pocket(content):
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
     evaluate_result = pd.DataFrame(columns=['code', 'date', 'result'])
-    for date, codelist in rps_250.iloc[:, -1:].iteritems():
-        # codelist = pd.append([ rps_120[date].iloc[:400], rps_250[date].iloc[:400]]).drop_duplicates(inplace=True)
+    for date, codelist in rps_250.iloc[:, -2:].iteritems():
         codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            # if  code == '600369' and date=='2019-04-10':
+            # if  code == '300677' :#and date=='2019-04-10'
             #     print(1)
             #     pass
             try:
@@ -253,7 +252,7 @@ def pocket(content):
                 if result.empty:
                     pass
                 elif vol > result['vol'].max() * 1.4 or ((rate > 9.8 and close == high) or rate > 18) \
-                        (vol > 3000000000 and vol > vol_last_5):
+                        or (vol > 3000000000 and vol > vol_last_5):
                     pass
                 else:
                     continue
@@ -288,6 +287,18 @@ def pocket(content):
                         and df.iloc[test_index]['open'] * 1.03 < df.iloc[test_index]['high']:
                         continue
 
+            if (df.iloc[index - 30:index]['close'] > df.iloc[index - 30:index]['ma30']).all():
+                test_data = df.iloc[index - 21:index]
+                if len(test_data[(test_data['ma5'] < test_data['ma20'])]) + len(
+                        test_data[(test_data['ma10'] < test_data['ma20'])]) > 6:
+                    continue
+            if df.iloc[index - 1]['close'] > df.iloc[index - 100:index - 1]['close'].max() and df.iloc[index - 2][
+                'close'] > df.iloc[index - 100:index - 2]['close'].max() \
+                    and df.iloc[index - 1]['ma20'] > df.iloc[index - 2]['ma20'] * 1.005 and df.iloc[index - 1]['ma30'] > \
+                    df.iloc[index - 2]['ma30'] * 1.005:
+                test_index = df.iloc[:index][df.iloc[:index]['ma20'] > df.iloc[:index]['ma10']].index[-1] - 2
+                if df.iloc[test_index]['close'] * 1.4 < close:
+                    continue
             high_date = df.loc[high_index, 'date']
             week = pd.read_csv(content['week'] + code + '.csv')
 
