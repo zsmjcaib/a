@@ -34,12 +34,12 @@ def pocket(content):
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
     evaluate_result = pd.DataFrame(columns=['code', 'date', 'result'])
-    for date, codelist in rps_250.iloc[:, -2:].iteritems():
+    for date, codelist in rps_250.iloc[:, -1:].iteritems():
         codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            # if  code == '300677' :#and date=='2019-04-10'
+            # if  code == '600938' :#and date=='2019-04-10'
             #     print(1)
             #     pass
             try:
@@ -98,7 +98,11 @@ def pocket(content):
                         and (df.iloc[index - 20:index]['close'] < df.iloc[index - 20:index]['ma20']).sum() == 0
                         and (df.iloc[index - 20:index]['ma5'] < df.iloc[index - 20:index]['ma10'] * 0.99).sum() == 0
                         and (df.iloc[index - 30:index]['rate'] > 5).sum() > 2):
-                    continue
+                    if not (df.iloc[index]['vol'] > df.iloc[index - 15:index]['vol'].max()
+                            and df.iloc[index - 1]['close'] > df.iloc[index - 1]['ma50'] * 1.08
+                            and (df.iloc[index - 60:index]['close'] > df.iloc[index - 60:index]['ma200'] * 0.92).all()
+                            and df.iloc[index]['vol'] > df.iloc[index - 5:index]['vol'].max() * 1.2):
+                        continue
 
 
             # # 要改 参数2可以
@@ -373,12 +377,12 @@ def pocket(content):
                             #                                "remarks_2": remarks_2}
                             continue
 
-                        week_strat_index = week[week['date'] >= start_date].index[0]
-                        if not fluency(week[week_strat_index:week_index]):
-                            # print(code + ' ' + date + ' ' + str(evaluate))
-                            # length = evaluate_result.shape[0]
-                            # evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,"remarks":remarks}
-                            continue
+                        # week_strat_index = week[week['date'] >= start_date].index[0]
+                        # if not fluency(week[week_strat_index:week_index]):
+                        #     # print(code + ' ' + date + ' ' + str(evaluate))
+                        #     # length = evaluate_result.shape[0]
+                        #     # evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,"remarks":remarks}
+                        #     continue
                 except:
                     print(code + ' ' + date + '-----------------------------')
 
@@ -459,20 +463,20 @@ def pocket(content):
                 #             df.iloc[index]['rate'] > 9.8)):
                 #     if multiple < 2.5:
 
-                # print(code + ' ' + date )
+                print(code + ' ' + date )
 
 
-                evaluate = evaluates(df, index)
-                remarks = last_check(df, index)
-                remarks_1, remarks_2 = last_check_1(df, index)
-                print(code + ' ' + date + ' ' + str(evaluate) + ' ' + remarks + ' ' + remarks_1 + ' ' + remarks_2)
-                new = pd.DataFrame(
-                    {"code": code, "date": date, "result": evaluate, "remarks": remarks, "remarks_1": remarks_1,
-                     "remarks_2": remarks_2}, index=[1])
-
-                evaluate_result = evaluate_result.append(new, ignore_index=True)
-
-            evaluate_result.to_csv(content['result'] + 'result+100.csv', index=False)
+            #     evaluate = evaluates(df, index)
+            #     remarks = last_check(df, index)
+            #     remarks_1, remarks_2 = last_check_1(df, index)
+            #     print(code + ' ' + date + ' ' + str(evaluate) + ' ' + remarks + ' ' + remarks_1 + ' ' + remarks_2)
+            #     new = pd.DataFrame(
+            #         {"code": code, "date": date, "result": evaluate, "remarks": remarks, "remarks_1": remarks_1,
+            #          "remarks_2": remarks_2}, index=[1])
+            #
+            #     evaluate_result = evaluate_result.append(new, ignore_index=True)
+            #
+            # evaluate_result.to_csv(content['result'] + 'result+100.csv', index=False)
 
 
 
