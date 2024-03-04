@@ -33,13 +33,14 @@ def pocket(content):
     rps_120 = pd.read_csv(content['rps_120'], dtype=str)
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
-    evaluate_result = pd.DataFrame(columns=['code', 'date', 'result'])
+    evaluate_result = pd.DataFrame(columns=['code', 'date', 'result','remarks','remarks_1','t+3','t+5','t+5_max','t3'])
     for date, codelist in rps_250.iloc[:, -1:].iteritems():
         codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
+        # codelist = rps_120[date].iloc[:].append(rps_250[date].iloc[:]).append(rps_50[date].iloc[:]).drop_duplicates()
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            # if  code == '600938' :#and date=='2019-04-10'
+            # if  code == '603997' :#and date=='2019-04-10'
             #     print(1)
             #     pass
             try:
@@ -57,6 +58,18 @@ def pocket(content):
             if market_vaule < 8000000000 or df.iloc[index]['close'] < df.iloc[index]['open']:
                 continue
 
+            last_close = df.loc[index - 1, 'close']
+            vol = df.loc[index, 'vol']
+            negative_vol_20 = get_vol(df, 'negative', index - 20, index - 1)
+            ma20 = df.loc[index, 'ma20']
+            rate = df.loc[index, 'rate']
+            if rate > 6 and vol > 100000000 and vol > negative_vol_20 * 1.5:
+                pass
+            elif (rate > 9.8 and close > ma20):
+                pass
+            else:
+                continue
+
             ma20_list = df.loc[index - 8:index - 1, 'ma20']
             ma20_result = (ma20_list / ma20_list.shift(2) - 1)[1:] * 100
             ma30_list = df.loc[index - 8:index - 1, 'ma30']
@@ -72,7 +85,6 @@ def pocket(content):
             data_max = open if open > close else close
             data_min = close if open > close else open
             max_20 = df.iloc[index - 21:index - 17]['close'].max()
-            last_close = df.loc[index - 1, 'close']
 
             if (df.iloc[index - 20:index]['close'] < df.iloc[index - 20:index]['ma120']).any():
                 if df.iloc[index]['ma120'] < df.iloc[index]['ma250'] * 1.25 and close < df.iloc[index]['ma250'] * 1.45:
@@ -91,20 +103,6 @@ def pocket(content):
                 if data_min / low > 1.01:
                     continue
 
-            # 参数2可以
-            condition = (df['low'].iloc[index - 30:index] < df['ma200'].iloc[index - 30:index] * 1.05)
-            if condition.any():
-                if not (close > df.iloc[index - 200:index - 40]['close'].max() * 1.2
-                        and (df.iloc[index - 20:index]['close'] < df.iloc[index - 20:index]['ma20']).sum() == 0
-                        and (df.iloc[index - 20:index]['ma5'] < df.iloc[index - 20:index]['ma10'] * 0.99).sum() == 0
-                        and (df.iloc[index - 30:index]['rate'] > 5).sum() > 2):
-                    if not (df.iloc[index]['vol'] > df.iloc[index - 15:index]['vol'].max()
-                            and df.iloc[index - 1]['close'] > df.iloc[index - 1]['ma50'] * 1.08
-                            and (df.iloc[index - 60:index]['close'] > df.iloc[index - 60:index]['ma200'] * 0.92).all()
-                            and df.iloc[index]['vol'] > df.iloc[index - 5:index]['vol'].max() * 1.2):
-                        continue
-
-
             # # 要改 参数2可以
             condition_3 = (df['open'].iloc[index - 2:index + 1] < df['ma10'].iloc[index - 2:index + 1] * 1.02)
             condition_4 = (df['close'].iloc[index - 2:index] < df['ma10'].iloc[index - 2:index] * 1.02)
@@ -118,16 +116,6 @@ def pocket(content):
                 low_close_20 = df.loc[index - 20:index]['close'].min()
                 if low_close_20 * 1.2 < close:
                     continue
-            low_250 = df.iloc[index - 250:index - 1]['close'].min()
-            if low_250> df.iloc[index]['close']*0.58 and low_250> df.iloc[index-1]['close']*0.64:
-                continue
-
-            ma120_list = df.iloc[index - 10:index - 1]['ma120']
-            ma120_check = (ma120_list / ma120_list.shift(1) - 1)[1:] < 0
-            ma200_list = df.iloc[index - 30:index - 1]['ma200']
-            ma200_check = (ma200_list / ma200_list.shift(2) - 1)[1:] < 0
-            if ma200_check.any() or ma120_check.any():
-                continue
 
             rate_sum = (abs(df.iloc[index - 51:index - 10]['rate']) > 5).sum()
             rate_sum_1 = (df.iloc[index - 51:index]['open'] / df.iloc[index - 51:index]['close'] > 1.05).sum()
@@ -163,23 +151,14 @@ def pocket(content):
                 'vol'] < 250000000 and df.iloc[index]['amount'] < df.iloc[index - 10:index]['amount'].max() * 1.1:
                 continue
 
-            min_5 = df.iloc[index - 5:index - 1]['close'].min()
-            last_close = df.loc[index - 1, 'close']
-            # if 1.03 < last_close / min_5 <= 1.1 and close < df.iloc[index - 100:index]['close'].max():
-            #     continue
 
-            rate = df.loc[index, 'rate']
             vol_last_5 = df[index - 5:index][df[index - 5:index]['rate'] < 0]['vol'].max()
-            vol = df.loc[index, 'vol']
-            negative_vol_20 = get_vol(df, 'negative', index - 20, index - 1)
-            negative_vol_10 = get_vol(df, 'negative', index - 10, index - 1)
+
 
             vol_20 = df.loc[index - 20:index - 1, 'vol'].mean() * 1.5
             vol_30 = df.loc[index - 30:index - 1, 'vol'].mean() * 1.5
             result = df[index - 10:index][df.iloc[index - 10:index]['rate'] < 0]
 
-            high_20 = df.loc[index - 20:index - 1, 'close'].max()
-            ma20 = df.loc[index, 'ma20']
             high_120 = df.loc[index - 120:index - 1, 'high'].max()
             high_index = df[df["high"] == high_120].index
             high_index = high_index[high_index < index][-1]
@@ -206,7 +185,7 @@ def pocket(content):
                     df.iloc[index - 8]['close'] > df.iloc[index - 3:index]['close'].min() * 1.12:
                 continue
 
-            subset = df.iloc[index - 100:index - 1]
+            subset = df.iloc[index - 80:index - 1]
             filtered_rows = subset[(subset['rate'] > 9.5)]
             if not filtered_rows.empty:
                 last_index = filtered_rows.index[-1]
@@ -263,14 +242,7 @@ def pocket(content):
             else:
                 continue
 
-            if close / last_close > 1.06 and vol > 100000000 and vol > negative_vol_20 * 1.5:
-                pass
 
-            elif (rate > 9.8 and close > ma20):
-                # if (positive_vol_10 < negative_vol_10 * 1.2 or positive_vol_20 < negative_vol_20 * 1.1):
-                pass
-            else:
-                continue
 
             ma20_sum = (df.iloc[index - 41:index]['ma20'] > df.iloc[index - 41:index]['close']).sum()
             ma20_close = (df.iloc[index - 21:index]['close'] / df.iloc[index - 21:index]['ma20'] > 1.1).sum()
@@ -347,7 +319,7 @@ def pocket(content):
                         # evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,"remarks":remarks}
                         continue
 
-
+                    boolean=True
                     if start_date != 0:
                         start_index = df[df['date'] <= start_date][-10:]['close'].idxmin()
                         start_high_index = df.loc[start_index:index - 10]['close'].idxmax()
@@ -369,13 +341,50 @@ def pocket(content):
 
                         boolean = multiple_top(df.loc[start_index - 15:index])
                         if not boolean:
-                            # print(code + ' ' + date + ' ' + str(
-                            #     evaluate) + ' ' + remarks + ' ' + remarks_1 + ' ' + remarks_2)
-                            # length = evaluate_result.shape[0]
-                            # evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
-                            #                                "remarks": remarks, "remarks_1": remarks_1,
-                            #                                "remarks_2": remarks_2}
+                            if vol < df.iloc[index - 11:index]['vol'].max() * 0.95:
+                                continue
+                            test_index = df.iloc[start_index:index - 10]['close'].idxmax()
+                            test_low_index = df.iloc[test_index:index - 1]['close'].idxmin()
+                            test_close = df.iloc[test_low_index]['close']
+                            if (df.iloc[test_index]['close'] * 0.75 > test_close and close * 0.8 > test_close) or \
+                                    (df.iloc[test_index]['close'] * 0.80 > test_close and close * 0.80 > test_close and index - test_low_index < 20):
+                                pass
+                            else:
+                                continue
+
+                    if boolean:
+                        week_30 = week.loc[week_index, 'ma30']
+                        week_50 = week.loc[week_index, 'ma50']
+                        if week_30 * 0.98 > week_50:
+                            pass
+                        else:
+                            if week_50 < week.loc[week_index - 1, 'ma50'] * 1.01 or week_30 < week.loc[week_index - 1, 'ma30'] * 1.02:
+                                continue
+                        low_250 = df.iloc[index - 250:index - 1]['close'].min()
+                        if low_250 > df.iloc[index]['close'] * 0.58 and low_250 > df.iloc[index - 1]['close'] * 0.64:
                             continue
+
+                        ma120_list = df.iloc[index - 10:index - 1]['ma120']
+                        ma120_check = (ma120_list / ma120_list.shift(1) - 1)[1:] < 0
+                        ma200_list = df.iloc[index - 30:index - 1]['ma200']
+                        ma200_check = (ma200_list / ma200_list.shift(2) - 1)[1:] < 0
+                        if ma200_check.any() or ma120_check.any():
+                            continue
+
+                        condition = (df['low'].iloc[index - 30:index] < df['ma200'].iloc[index - 30:index] * 1.05).sum()
+                        if condition > 0:
+                            if not (close > df.iloc[index - 200:index - 40]['close'].max() * 1.2
+                                    and (df.iloc[index - 20:index]['close'] < df.iloc[index - 20:index]['ma20']).sum() == 0
+                                    and (df.iloc[index - 20:index]['ma5'] < df.iloc[index - 20:index]['ma10'] * 0.99).sum() == 0
+                                    and (df.iloc[index - 30:index]['rate'] > 5).sum() > 2):
+                                if not (df.iloc[index]['vol'] > df.iloc[index - 15:index]['vol'].max()
+                                        and df.iloc[index - 1]['close'] > df.iloc[index - 1]['ma50'] * 1.08
+                                        and (df.iloc[index - 60:index]['close'] > df.iloc[index - 60:index]['ma200'] * 0.92).all()
+                                        and df.iloc[index]['vol'] > df.iloc[index - 5:index]['vol'].max() * 1.2):
+                                    continue
+
+
+
 
                         # week_strat_index = week[week['date'] >= start_date].index[0]
                         # if not fluency(week[week_strat_index:week_index]):
@@ -385,6 +394,7 @@ def pocket(content):
                         #     continue
                 except:
                     print(code + ' ' + date + '-----------------------------')
+                    continue
 
                     # 要改 参数2要改 区别不大
                     # if (market_vaule > 100000000000 or get_per(code, date)) or (
@@ -465,17 +475,16 @@ def pocket(content):
 
                 print(code + ' ' + date )
 
-
             #     evaluate = evaluates(df, index)
             #     remarks = last_check(df, index)
-            #     remarks_1, remarks_2 = last_check_1(df, index)
-            #     print(code + ' ' + date + ' ' + str(evaluate) + ' ' + remarks + ' ' + remarks_1 + ' ' + remarks_2)
-            #     new = pd.DataFrame(
-            #         {"code": code, "date": date, "result": evaluate, "remarks": remarks, "remarks_1": remarks_1,
-            #          "remarks_2": remarks_2}, index=[1])
-            #
-            #     evaluate_result = evaluate_result.append(new, ignore_index=True)
-            #
+            #     remarks_1, remarks_2, t_5, t_5_max = last_check_1(df, index)
+            #     print(code + ' ' + date + ' ' + str(
+            #         evaluate) + ' ' + remarks + ' ' + remarks_1 + ' ' + remarks_2+' '+t_5+' '+t_5_max)
+            #     length = evaluate_result.shape[0]
+            #     evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
+            #                                    "remarks": remarks,
+            #                                    "remarks_1": remarks_1, "t+3": remarks_2, "t+5": t_5,
+            #                                    "t+5_max": t_5_max, "t3": ''}
             # evaluate_result.to_csv(content['result'] + 'result+100.csv', index=False)
 
 
@@ -1232,15 +1241,6 @@ def week_tight1(week, code, date, high_date, rate):
            not (week.iloc[index-4]['close']<week.iloc[index-2]['close'] and week.iloc[index-3]['close']<week.iloc[index-1]['close']):
         return
 
-    week_30 = week.loc[index, 'ma30']
-    week_50 = week.loc[index, 'ma50']
-
-    if week_30 *0.98 > week_50:
-        pass
-    else:
-        if week_50 < week.loc[index - 1, 'ma50'] * 1.01 or week_30 < week.loc[index - 1, 'ma30'] * 1.02:
-            return
-
     high_index = week[week["date"] >= high_date].index[0]
     if index == high_index: return  True
     low = week.loc[high_index:index - 1, 'low'].min()
@@ -1711,15 +1711,20 @@ def last_check(data,index):
     return result+'-'+str(num)
 
 def last_check_1(data,index):
-    test_index = index+4
+    test_index = index + 4
     close = data.iloc[index]['close']
-    open = data.iloc[index+1]['open']
-    test = data.iloc[index+1:test_index]['close'].max()
-    test_close = data.iloc[test_index-1]['close']
-    vaule = str(round((test_close/open-1)*100,1))
-    if close>test:
-        return 'wrong',vaule
-    return 'right',vaule
+    open = data.iloc[index + 1]['open']
+    test = data.iloc[index + 1:test_index]['close'].max()
+    test_close = data.iloc[test_index - 1]['close']
+    vaule = str(round((test_close / open - 1) * 100, 1))
+
+    test_index = index + 6
+    test_close = data.iloc[test_index - 1]['close']
+    vaule1 = str(round((test_close / open - 1) * 100, 1))
+    t_5_max = str(round((data.iloc[index + 1:test_index]['close'].max() / open - 1) * 100, 1))
+    if close > test:
+        return 'wrong', vaule, vaule1, t_5_max
+    return 'right', vaule, vaule1, t_5_max
 
 def get_per(code, date):
     # return True
