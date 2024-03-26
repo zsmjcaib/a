@@ -40,7 +40,7 @@ def pocket(content):
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            # if  code == '603997' :#and date=='2019-04-10'
+            # if  code == '300017' :#and date=='2019-04-10'
             #     print(1)
             #     pass
             try:
@@ -201,7 +201,12 @@ def pocket(content):
                 if df.iloc[last_index]['open'] > df.iloc[last_index]['close'] * 1.07 and \
                         df.iloc[last_index - 3:last_index]['rate'].max() > 8:
                     continue
-
+            subset = df.iloc[index - 50:index - 1]
+            filtered_rows = subset[(subset['rate'] > 9.5)]
+            if len(filtered_rows) > 0:
+                last_index = filtered_rows.index[-1]
+                if (df.iloc[last_index + 1:last_index + 7]['rate'] < 0).all() or (df.iloc[last_index + 1:last_index + 13]['rate'] < 0).sum() > 8:
+                    continue
             if df.iloc[index - 60:index]['high'].max() * 0.9 < df.iloc[index]['close'] < df.iloc[index - 60:index][
                 'high'].max():
                 max_5_index = df.iloc[index - 60:index]['high'].nlargest(8).index
@@ -279,6 +284,18 @@ def pocket(content):
                 test_index = df.iloc[:index][df.iloc[:index]['ma20'] > df.iloc[:index]['ma10']].index[-1] - 2
                 if df.iloc[test_index]['close'] * 1.4 < close:
                     continue
+            if high > df.iloc[index - 100:index]['high'].max() and close < df.iloc[index - 100:index]['close'].max():
+                continue
+            if low > df.iloc[index - 60:index]['high'].max() * 0.99 and (close != high or rate < 9.8) \
+                    and (df.iloc[index - 15:index]['close'] > df.iloc[index - 15:index]['ma20']).all():
+                continue
+            if ((close - open) / close < 0.02 and close != high) or open==high:
+                continue
+            if high / close < 1.01 and close != high and 10.5 > rate > 9 and close > df.iloc[index - 100:index]['close'].max() \
+                    and (df.iloc[index - 2:index]['rate'] > 0).all():
+                continue
+            if rate > 15 and df.iloc[index]['amount'] < df.iloc[index - 40:index]['amount'].max() * 1.15:
+                continue
             high_date = df.loc[high_index, 'date']
             week = pd.read_csv(content['week'] + code + '.csv')
 
@@ -372,9 +389,14 @@ def pocket(content):
                         ma120_check = (ma120_list / ma120_list.shift(1) - 1)[1:] < 0
                         ma200_list = df.iloc[index - 30:index - 1]['ma200']
                         ma200_check = (ma200_list / ma200_list.shift(2) - 1)[1:] < 0
-                        if ma200_check.any() or ma120_check.any():
+                        ma250_list = df.iloc[index - 10:index - 1]['ma250']
+                        ma250_check = (ma250_list / ma250_list.shift(1) - 0.999)[1:] < 0
+                        if ma200_check.any() or ma120_check.any() or ma250_check.any():
                             continue
-
+                        ma5_list = df.iloc[index - 4:index]['ma5']
+                        ma5_check = (ma5_list / ma5_list.shift(1) - 1)[1:] < 0
+                        if df.iloc[index - 5:index]['close'].max() > close and close != high and ma5_check.any():
+                            continue
                         condition = (df['low'].iloc[index - 30:index] < df['ma200'].iloc[index - 30:index] * 1.05).sum()
                         if condition > 0:
                             if not (close > df.iloc[index - 200:index - 40]['close'].max() * 1.2
@@ -491,16 +513,20 @@ def pocket(content):
 
                 print(code + ' ' + date )
 
-            #     evaluate = evaluates(df, index)
+
+            #     evaluate, high_index = evaluates(df, index)
             #     remarks, remarks_info = last_check(df, index)
             #     remarks_1, remarks_2, t_5, t_5_max = last_check_1(df, index)
+            #     t3 = -999
+            #     if high_index != '':
+            #         t3 = round((df.iloc[index + 1:high_index]['low'].min() / df.iloc[index + 1]['open'] - 1) * 100, 2)
             #     print(code + ' ' + date + ' ' + str(
             #         evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max)
             #     length = evaluate_result.shape[0]
             #     evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
             #                                    "remarks": remarks, "remarks_info": remarks_info,
             #                                    "remarks_1": remarks_1, "t+3": remarks_2, "t+5": t_5,
-            #                                    "t+5_max": t_5_max, "t3": ''}
+            #                                    "t+5_max": t_5_max, "t3": t3}
             # evaluate_result.to_csv(content['result'] + 'result+100.csv', index=False)
 
 
@@ -515,20 +541,20 @@ def evaluates(df, index):
         end_price = row['close']
 
         if end_price / price > 1.45:
-            return 1
+            return 1, i
         elif end_price / price < 0.94:
             high = df.iloc[index + 2:i]['close'].max()
-            high_index = df.iloc[index + 1:i]['close'].idxmax() - index
+            high_index = df.iloc[index + 1:i]['close'].idxmax()
             if high / price > 1.35:
-                return 2
+                return 2, high_index
             if high / price > 1.25:
-                return 3
+                return 3, high_index
             if high / price > 1.15:
-                return 4
+                return 4, high_index
             if high / price > 1.1:
-                return 5
+                return 5, high_index
             if high / price > 1.05:
-                return 6
+                return 6, high_index
             max_index = i - index
             for j, roww in df.iloc[i:index + 40].iterrows():
                 endd_price = roww['close']
@@ -540,17 +566,17 @@ def evaluates(df, index):
                     min_index = j - index
                     if endd_price / price < 0.89:
                         if max / price > 1.45:
-                            return 12
+                            return 12, ''
                         if max / price > 1.35:
-                            return 22
+                            return 22, ''
                         if max / price > 1.25:
-                            return 32
+                            return 32, ''
                         if max / price > 1.15:
-                            return 42
+                            return 42, ''
                         if max / price > 1.1:
-                            return 52
+                            return 52, ''
                         if max / price > 1.05:
-                            return 62
+                            return 62, ''
                         for k, rowww in df.iloc[j:index + 40].iterrows():
                             enddd_price = rowww['close']
                             if max < enddd_price:
@@ -561,62 +587,62 @@ def evaluates(df, index):
                                 min_index = k - index
                                 if enddd_price / price < 0.82:
                                     if max / price > 1.45:
-                                        return 13
+                                        return 13, ''
                                     if max / price > 1.35:
-                                        return 23
+                                        return 23, ''
                                     if max / price > 1.25:
-                                        return 33
+                                        return 33, ''
                                     if max / price > 1.15:
-                                        return 43
+                                        return 43, ''
                                     if max / price > 1.1:
-                                        return 53
+                                        return 53, ''
                                     if max / price > 1.05:
-                                        return 63
+                                        return 63, ''
                                     else:
-                                        return 10
+                                        return 10, ''
                         if max / price > 1.45:
-                            return 13
+                            return 13, ''
                         if max / price > 1.35:
-                            return 23
+                            return 23, ''
                         if max / price > 1.25:
-                            return 33
+                            return 33, ''
                         if max / price > 1.15:
-                            return 43
+                            return 43, ''
                         if max / price > 1.1:
-                            return 53
+                            return 53, ''
                         if max / price > 1.05:
-                            return 63
+                            return 63, ''
                         else:
-                            return 9
+                            return 9, ''
             if max / price > 1.45:
-                return 12
+                return 12, ''
             if max / price > 1.35:
-                return 22
+                return 22, ''
             if max / price > 1.25:
-                return 32
+                return 32, ''
             if max / price > 1.15:
-                return 42
+                return 42, ''
             if max / price > 1.1:
-                return 52
+                return 52, ''
             if max / price > 1.05:
-                return 62
-            return 8
+                return 62, ''
+            return 8, ''
 
     max_close = df.iloc[index:index + 40]['close'].max()
-    max_index = df.iloc[index:index + 40]['close'].idxmax() - index
-    if max_close / price > 1.35:
-        return 2
-    if max_close / price > 1.25:
-        return 3
-    if max_close / price > 1.15:
-        return 4
-    if max_close / price > 1.1:
-        return 5
-    if max_close / price > 1.05:
-        return 6
-    else:
-        return 7
+    high_index = df.iloc[index + 1:index + 40]['close'].idxmax()
 
+    if max_close / price > 1.35:
+        return 2, high_index
+    if max_close / price > 1.25:
+        return 3, high_index
+    if max_close / price > 1.15:
+        return 4, high_index
+    if max_close / price > 1.1:
+        return 5, high_index
+    if max_close / price > 1.05:
+        return 6, high_index
+    else:
+        return 7, high_index
 
 def test(content, date, code,evaluate_result):
     df = pd.read_csv(content['normal'] + code + '.csv')
