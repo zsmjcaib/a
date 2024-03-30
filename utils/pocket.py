@@ -34,13 +34,13 @@ def pocket(content):
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
     evaluate_result = pd.DataFrame(columns=['code', 'date', 'result','remarks','remarks_info','remarks_1','t+3','t+5','t+5_max','t3'])
-    for date, codelist in rps_250.iloc[:, -1:].iteritems():
+    for date, codelist in rps_250.iloc[:, 300:].iteritems():
         codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
         # codelist = rps_120[date].iloc[:].append(rps_250[date].iloc[:]).append(rps_50[date].iloc[:]).drop_duplicates()
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            # if  code == '300017' :#and date=='2019-04-10'
+            # if  code == '601567' :#and date=='2019-04-10'
             #     print(1)
             #     pass
             try:
@@ -214,9 +214,11 @@ def pocket(content):
                         and df.iloc[index - 1]['open'] / df.iloc[index - 1]['low'] > 1.02:
                     continue
 
+            score = 0
             lst = []
-            for i in range(index - 30, index - 2):
-                if df.iloc[i]['high'] == df.iloc[i - 2:i + 3]['high'].max() and high * 1.02 > df.iloc[i]['high'] > high * 0.98:
+            for i in range(index - 60, index - 2):
+                if df.iloc[i]['high'] == df.iloc[i - 3:i + 4]['high'].max() and high * 1.02 > df.iloc[i][
+                    'high'] > high * 0.99:
                     lst.append(i)
             j = 0
             while j < len(lst) - 1:
@@ -225,6 +227,21 @@ def pocket(content):
                 else:
                     j += 1
             if len(lst) > 2:
+                score += 1
+            lst = []
+            for i in range(index - 30, index - 2):
+                if df.iloc[i]['high'] == df.iloc[i - 2:i + 3]['high'].max() and high * 1.02 > df.iloc[i][
+                    'high'] > high * 0.98:
+                    lst.append(i)
+            j = 0
+            while j < len(lst) - 1:
+                if lst[j + 1] == lst[j] + 1:
+                    lst.pop(j)
+                else:
+                    j += 1
+            if len(lst) > 2:
+                score += 1
+            if score > 0 and not (2.8 > df.iloc[index - 10:index]['rate'].abs().mean() > 2):
                 continue
 
             if close > ma120 * 1.05:
@@ -237,6 +254,16 @@ def pocket(content):
                     pass
                 elif (df.iloc[index - 80:index]['close'] * 1.04 > df.iloc[index - 80:index]['ma30']).all() or \
                         (df.iloc[index - 100:index]['close'] * 1.02 > df.iloc[index - 100:index]['ma50']).all():
+                    pass
+                elif df.iloc[index - 20:index]['vol'].mean() * 0 < vol and high < df.iloc[index - 40:index][
+                    'high'].max() * 1.04 \
+                        and (df.iloc[index - 10:index]['ma10'] < df.iloc[index - 10:index]['close']).all():
+                    pass
+
+                elif (df.iloc[index - 50:index]['close'] > df.iloc[index - 50:index]['ma50']).all() and vol > result[
+                    'vol'].max() * 1.1 \
+                        and (vol > df.iloc[index - 10:index]['vol'].max() * 1.1 or (
+                        df.iloc[index - 10:index]['rate'] > 4).sum() > 1):
                     pass
                 else:
                     continue
@@ -531,23 +558,23 @@ def pocket(content):
                 #             df.iloc[index]['rate'] > 9.8)):
                 #     if multiple < 2.5:
 
-                print(code + ' ' + date )
+                # print(code + ' ' + date )
 
 
-            #     evaluate, high_index = evaluates(df, index)
-            #     remarks, remarks_info = last_check(df, index)
-            #     remarks_1, remarks_2, t_5, t_5_max = last_check_1(df, index)
-            #     t3 = -999
-            #     if high_index != '':
-            #         t3 = round((df.iloc[index + 1:high_index]['low'].min() / df.iloc[index + 1]['open'] - 1) * 100, 2)
-            #     print(code + ' ' + date + ' ' + str(
-            #         evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max)
-            #     length = evaluate_result.shape[0]
-            #     evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
-            #                                    "remarks": remarks, "remarks_info": remarks_info,
-            #                                    "remarks_1": remarks_1, "t+3": remarks_2, "t+5": t_5,
-            #                                    "t+5_max": t_5_max, "t3": t3}
-            # evaluate_result.to_csv(content['result'] + 'result+1000.csv', index=False)
+                evaluate, high_index = evaluates(df, index)
+                remarks, remarks_info = last_check(df, index)
+                remarks_1, remarks_2, t_5, t_5_max = last_check_1(df, index)
+                t3 = -999
+                if high_index != '':
+                    t3 = round((df.iloc[index + 1:high_index]['low'].min() / df.iloc[index + 1]['open'] - 1) * 100, 2)
+                print(code + ' ' + date + ' ' + str(
+                    evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max)
+                length = evaluate_result.shape[0]
+                evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
+                                               "remarks": remarks, "remarks_info": remarks_info,
+                                               "remarks_1": remarks_1, "t+3": remarks_2, "t+5": t_5,
+                                               "t+5_max": t_5_max, "t3": t3}
+            evaluate_result.to_csv(content['result'] + 'result+1001.csv', index=False)
 
 
 
