@@ -34,15 +34,15 @@ def pocket(content):
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
     evaluate_result = pd.DataFrame(columns=['code', 'date', 'result','remarks','remarks_info','remarks_1','t+3','t+5','t+5_max','t3'])
-    for date, codelist in rps_250.iloc[:, -1:].iteritems():
+    for date, codelist in rps_250.iloc[:, -11:].iteritems():
         codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
         # codelist = rps_120[date].iloc[:].append(rps_250[date].iloc[:]).append(rps_50[date].iloc[:]).drop_duplicates()
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            # if  code == '688063' :#and date=='2019-04-10'
-            #     print(1)
-            #     pass
+            if  code == '000680' :#and date=='2019-04-10'
+                print(1)
+                pass
             try:
                 index = df[df["date"] == date].index[0]
             except:
@@ -63,7 +63,7 @@ def pocket(content):
             negative_vol_20 = get_vol(df, 'negative', index - 20, index - 1)
             ma20 = df.loc[index, 'ma20']
             rate = df.loc[index, 'rate']
-            if rate > 6 and vol > 100000000 :#and vol > negative_vol_20 * 1.5
+            if rate > 6 and vol > 100000000 and vol > negative_vol_20 * 1.5:#
                 pass
             elif (rate > 9.8 and close > ma20):
                 pass
@@ -92,7 +92,9 @@ def pocket(content):
 
             if max_20 / close > 1.05:  #
                 continue
-
+            if open == low and close == high:
+                if open > df.iloc[index - 20:index]['high'].max():
+                    continue
             if ((high / data_max + data_min / low - 2) > (close - open) / close and high != data_max and (
                     data_min / low - 1) < (high / data_max - 1) * 3) or (
                     (high / data_max) + (data_min / low) - 2) > 0.08:  #
@@ -471,7 +473,7 @@ def pocket(content):
                                             elif (df.iloc[index - 30:index]['rate'] < -5).sum() > 2 or (df.iloc[index - 20:index]['rate'] < -6).sum() > 0:
                                                 continue
                                             elif close > max(ma120, ma200, ma250) * 1.25 and close >df.iloc[index - 30:index]['close'].max() * 1.05 \
-                                                    and high < df.iloc[index - 30:index]['high'].max() * 1.03:
+                                                    and high > df.iloc[index - 30:index]['high'].max() * 1.03:
                                                     flag = 1
                             if flag==0:
                                 continue
@@ -596,7 +598,7 @@ def pocket(content):
             #                                    "remarks": remarks, "remarks_info": remarks_info,
             #                                    "remarks_1": remarks_1, "t+3": remarks_2, "t+5": t_5,
             #                                    "t+5_max": t_5_max, "t3": t3}
-            # evaluate_result.to_csv(content['result'] + 'result+1001.csv', index=False)
+            # evaluate_result.to_csv(content['result'] + 'result+1003.csv', index=False)
 
 
 
