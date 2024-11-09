@@ -1,0 +1,18 @@
+normal:
+  '/Users/zsmjcaib/Desktop/code/data/day_2406/'
+week:
+  '/Users/zsmjcaib/Desktop/code/data/week_2406/'
+result:
+  '/Users/zsmjcaib/Desktop/code/data/result2/'
+rpsinfo_50:
+  '/Users/zsmjcaib/Desktop/code/data/rps_2406/rpsinfo_50.csv'
+rpsinfo_250:
+  '/Users/zsmjcaib/Desktop/code/data/rps_2406/rpsinfo_250.csv'
+rpsinfo_120:
+  '/Users/zsmjcaib/Desktop/code/data/rps_2406/rpsinfo_120.csv'
+rps_50:
+  '/Users/zsmjcaib/Desktop/code/data/rps_2406/rps_50.csv'
+rps_250:
+  '/Users/zsmjcaib/Desktop/code/data/rps_2406/rps_250.csv'
+rps_120:
+  '/Users/zsmjcaib/Desktop/code/data/rps_2406/rps_120.csv'

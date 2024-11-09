@@ -1,7 +1,6 @@
 from typing import Dict
 import efinance as ef
 import pandas as pd
-from multiprocessing import Process
 from datetime import datetime,timedelta
 
 import talib
@@ -15,12 +14,12 @@ from  utils.getMacd import stock_macd
 def update(stock_codes,content,date = 'all'):
     if date == 'all':
         now = datetime.now()
-        delta32 = timedelta(days=10)
+        delta32 = timedelta(days=15)
         beg = (now - delta32).date().strftime('%Y%m%d')
     else:
         beg = datetime.now().date().strftime('%Y%m%d')
 
-    # beg = '20170101'
+    beg = '20230101'
 
     # beg = '20110101'
     # end_time = '20160401'

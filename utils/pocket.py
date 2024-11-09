@@ -15,17 +15,17 @@ from datetime import datetime, timedelta
 now = ef.stock.get_realtime_quotes()
 with open('../config.yaml') as f:
     content = yaml.load(f, Loader=yaml.FullLoader)
-file_list = os.listdir(content['performance'])
-dfs = []
-for file_name in file_list:
-    if file_name.endswith('.csv'):
-        file_path = os.path.join(content['performance'], file_name)
-        df = pd.read_csv(file_path, dtype=str)
-        # df_unique = df.drop_duplicates()
-        dfs.append(df)
-
-# 合并所有数据框
-performance_df = pd.concat(dfs)
+# file_list = os.listdir(content['performance'])
+# dfs = []
+# for file_name in file_list:
+#     if file_name.endswith('.csv'):
+#         file_path = os.path.join(content['performance'], file_name)
+#         df = pd.read_csv(file_path, dtype=str)
+#         # df_unique = df.drop_duplicates()
+#         dfs.append(df)
+#
+# # 合并所有数据框
+# performance_df = pd.concat(dfs)
 
 
 def pocket(content):
@@ -34,15 +34,16 @@ def pocket(content):
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
     evaluate_result = pd.DataFrame(columns=['code', 'date', 'result','remarks','remarks_info','remarks_1','t+3','t+5','t+5_max','t3'])
-    for date, codelist in rps_250.iloc[:, -11:].iteritems():
-        codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
+    for date, codelist in rps_250.iloc[:, -1:].iteritems():
+        codelist = rps_120[date].iloc[:500].append(rps_250[date].iloc[:600]).append(rps_50[date].iloc[:400]).drop_duplicates()
         # codelist = rps_120[date].iloc[:].append(rps_250[date].iloc[:]).append(rps_50[date].iloc[:]).drop_duplicates()
         for _, code in codelist.iteritems():
             df = pd.read_csv(content['normal'] + code + '.csv')
 
-            if  code == '000680' :#and date=='2019-04-10'
-                print(1)
-                pass
+            # if  code == '603019' :#and date=='2019-04-10'
+            #     print('ok')
+            #     print(1)
+            #     pass
             try:
                 index = df[df["date"] == date].index[0]
             except:
@@ -86,7 +87,7 @@ def pocket(content):
             data_min = close if open > close else open
             max_20 = df.iloc[index - 21:index - 17]['close'].max()
 
-            if high / last_close > 1.096 and rate < 8 and df.iloc[index]['vol'] < df.iloc[index - 50:index - 1][
+            if high / last_close > 1.098 and rate < 8 and df.iloc[index]['vol'] < df.iloc[index - 50:index - 1][
                 'vol'].max() * 0.85 and close < df.iloc[index - 50:index - 1]['close'].max() * 1.03:
                 continue
 
@@ -176,7 +177,7 @@ def pocket(content):
             filtered_rows = subset[(subset['rate'] > 9.5)]
             if not filtered_rows.empty:
                 last_index = filtered_rows.index[-1]
-                if df.iloc[last_index + 1]['open'] > df.iloc[last_index + 1]['close'] * 1.08:
+                if df.iloc[last_index + 1]['open'] > df.iloc[last_index + 1]['close'] * 1.08 and df.iloc[last_index + 2:index-1]['rate'].max()<9:
                     continue
 
             if df.iloc[index - 9]['close'] > df.iloc[index - 3:index]['close'].min() * 1.13 or \
@@ -187,12 +188,15 @@ def pocket(content):
             filtered_rows = subset[(subset['rate'] > 9.5)]
             if not filtered_rows.empty:
                 last_index = filtered_rows.index[-1]
-                if (df.iloc[last_index + 1:last_index + 5]['high'].max() > df.iloc[last_index + 1:last_index + 5][
-                    'close'].min() * 1.18 or
-                    df.iloc[last_index + 1:last_index + 6]['high'].max() > df.iloc[last_index + 1:last_index + 6][
-                        'close'].min() * 1.2) \
-                        and (df.iloc[last_index + 1:index - 1]['rate'] > 7.5).sum() < 1:
-                    continue
+                filtered_high_index = df.iloc[last_index + 1:last_index + 5]['high'].idxmax()
+                filtered_min_index = df.iloc[last_index + 1:last_index + 5]['close'].idxmin()
+                if filtered_min_index>filtered_high_index:
+                    if (df.iloc[last_index + 1:last_index + 5]['high'].max() > df.iloc[last_index + 1:last_index + 5][
+                        'close'].min() * 1.18 or
+                        df.iloc[last_index + 1:last_index + 6]['high'].max() > df.iloc[last_index + 1:last_index + 6][
+                            'close'].min() * 1.2) \
+                            and (df.iloc[last_index + 1:index - 1]['rate'] > 7.5).sum() < 1:
+                        continue
             filtered_rows = subset[(subset['open'] > close) | (subset['close'] > close)]
             if not filtered_rows.empty:
                 last_index = filtered_rows.index[-1]
@@ -320,7 +324,7 @@ def pocket(content):
             if high / close < 1.01 and close != high and 10.5 > rate > 9 and close > df.iloc[index - 100:index]['close'].max() \
                     and (df.iloc[index - 2:index]['rate'] > 0).all():
                 continue
-            if rate > 15 and df.iloc[index]['amount'] < df.iloc[index - 40:index]['amount'].max() * 1.15:
+            if rate > 15 and df.iloc[index]['amount'] < df.iloc[index - 40:index]['amount'].max() * 1.15 and high!=close:
                 continue
             if (df.iloc[index - 60:index]['close'] > df.iloc[index - 60:index]['ma30']).all() \
                     and (df.iloc[index - 60:index]['ma30'] * 1.15 > df.iloc[index - 60:index]['close']).all():

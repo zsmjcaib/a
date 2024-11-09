@@ -20,5 +20,5 @@ rps_120:
   '/Users/zsmjcaib/Desktop/code/data/rps/rps_120.csv'
 performance:
     '/Users/zsmjcaib/Desktop/code/data/performance/'
-loser:
-  '/Users/zsmjcaib/Desktop/code/data/loser/'
+composite:
+  '/Users/zsmjcaib/Desktop/code/data/composite/'
