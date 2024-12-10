@@ -19,8 +19,8 @@ def update(stock_codes,content,date = 'all'):
     else:
         beg = datetime.now().date().strftime('%Y%m%d')
 
-    beg = '20230101'
-
+    # beg = '20230101'
+    # end_date='20241111'
     # beg = '20110101'
     # end_time = '20160401'
     total = len(stock_codes)
