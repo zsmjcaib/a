@@ -1,5 +1,5 @@
 import doupand as dp
-from datetime import datetime
+from datetime import datetime,timedelta
 import os
 import pandas as pd
 import talib
@@ -58,9 +58,11 @@ def ma(df):
 
 if __name__ == '__main__':
     dr = dp.data_reader()
-    # beg = datetime.now().date().strftime('%Y%m%d')
+    from datetime import datetime
 
-    df = get_price('399006.XSHE', frequency='1d', count=1800, end_date='2024-08-30')  # 可以指定结束日期，获取历史行情
+    beg = datetime.now().date().strftime('%Y%m%d')
+
+    df = get_price('399006.XSHE', frequency='1d', count=1800, end_date=beg)  # 可以指定结束日期，获取历史行情
 
     with open('config.yaml') as f:
         content = yaml.load(f, Loader=yaml.FullLoader)
