@@ -63,7 +63,7 @@ if __name__ == '__main__':
     beg = datetime.now().date().strftime('%Y%m%d')
 
     df = get_price('399006.XSHE', frequency='1d', count=1800, end_date=beg)  # 可以指定结束日期，获取历史行情
-
+    print(df.index[-1])
     with open('config.yaml') as f:
         content = yaml.load(f, Loader=yaml.FullLoader)
         f.close()
