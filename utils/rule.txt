@@ -1,1 +1,24 @@
 if df.iloc[index + 1]['open'] < df.iloc[index + 1]['close'] and df.iloc[index + 1]['high'] < close: return
+
+if (df.iloc[index+1:index+6]['high'] / df.iloc[index+1:index+6][['open', 'close']].max(axis=1) > 1.03).sum() > 2 \
+            and df.iloc[index+1:index+6]['close'].max()<close*1.05:return
+
+
+    subset = df.iloc[index+1 :index +12]
+    filtered_rows = subset[(subset['rate'] > 6)]
+    # filtered_rows = filtered_rows[filtered_rows['rate']<9]
+    for i in(filtered_rows.index):
+        if df.iloc[i-1]['close']<df.iloc[index+1]['open']<df.iloc[i-1]['close']*1.2 and df.iloc[i]['close']<close:
+        pass
+
+    subset = df.iloc[index+1 :index +6]
+    filtered_rows = subset[(subset['rate'] > 6)]
+    for i in(filtered_rows.index):buy
+
+    subset = df.iloc[index+1 :index +4]
+    filtered_rows = subset[(subset['rate'] > 6)]
+    for i in(filtered_rows.index):
+        if  high*1.05>df.iloc[i]['close']:buy
+
+if open<df.iloc[index+1]['close']<df.iloc[index+1]['open']<close   and df.iloc[index+1]['rate']<-5:
+    return

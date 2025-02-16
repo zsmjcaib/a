@@ -74,75 +74,35 @@ def test(content,j):
     path = content['normal']
     # for j in [ '120', '250','50']:
     rps_temp = pd.DataFrame(columns=['date'])
-    if not os.path.exists(content['rpsinfo_'+j]):
-        rps = pd.DataFrame(columns=['date'])
+    rps = pd.DataFrame(columns=['date'])
+
+    for file in os.listdir(path):
+        if file == '.DS_Store': continue
+        normal = pd.read_csv(content['normal'] + file)
+
+        code = str(file[:6])
+        if len(normal) > 250:
+            normal[code] = (normal['close'] / normal['close'].shift(int(j)) - 1) * 100
+
+            temp = normal[['date', code]]
+
+            if not rps_temp.axes[1].isin([code]).max():
+                rps_temp = pd.merge(rps_temp, temp, how="outer", on="date")
+                rps_temp = rps_temp.sort_values('date')
+
+        i = i + 1
+        if i % 500 == 0:
+            print(j + '_' + str(i))
+            rps = pd.merge(rps, rps_temp, how="outer", on="date")
+            rps_temp = pd.DataFrame(columns=['date'])
+
+    rps_50 = pd.merge(rps, rps_temp, how="outer", on="date")
+    rps_50 = rps_50.sort_values('date')
+
+    rps_50.to_csv(content['rpsinfo_' + j], index=False)
+    # print(content['rpsinfo_' + j])
 
 
-        for file in os.listdir(path):
-            if file == '.DS_Store': continue
-            normal = pd.read_csv(content['normal'] + file)
-            # freq=j+"_"+str(file[:6])
-
-            code = str(file[:6])
-            if len(normal) > 250:
-                normal[code] = (normal['close'] / normal['close'].shift(int(j)) - 1) * 100
-
-                temp = normal[['date', code]]
-
-                if not rps_temp.axes[1].isin([code]).max():
-                    rps_temp = pd.merge(rps_temp, temp, how="outer", on="date")
-                    rps_temp = rps_temp.sort_values('date')
-
-            i = i + 1
-            if i % 500 == 0:
-                print(i)
-
-        rps_50 = pd.merge(rps, rps_temp, how="outer", on="date")
-        rps_50 = rps_50.sort_values('date')
-
-        rps_50.to_csv(content['rpsinfo_' + j], index=False)
-        print(content['rpsinfo_' + j])
-    else:
-        rps  = pd.read_csv(content['rpsinfo_'+j])
-        for file in os.listdir(path):
-            if file == '.DS_Store': continue
-            normal = pd.read_csv(content['normal'] + file)
-            # freq=j+"_"+str(file[:6])
-
-            code = str(file[:6])
-            if len(normal) > 250:
-                normal[code] = (normal['close'].iloc[-10:] / normal['close'].shift(int(j)).iloc[-10:] - 1) * 100
-
-                temp = normal[['date', code]].iloc[-10:]
-
-
-                if not rps_temp.axes[1].isin([code]).max():
-                    rps_temp = pd.merge(rps_temp, temp, how="outer", on="date")
-                    rps_temp = rps_temp.sort_values('date')
-            i = i + 1
-            if i % 500 == 0:
-                print(j+'_'+str(i))
-        rps.drop(rps.tail(6).index, inplace=True)
-        index = rps_temp[rps_temp['date'] == rps.iat[-1, 0]].index.tolist()[-1]
-
-        rps_50 = rps.append(rps_temp[index+1:], ignore_index=True)
-        rps_50.to_csv(content['rpsinfo_' + j], index=False)
-        i = 0
-
-        #开始回测
-        # for i, row in real[250:].iterrows():
-        #     normal = normal.append(row).reset_index(drop=True)
-        #     date = normal['date'].iloc[-1]
-        #     if date == '2019-09-19':
-        #         print('')
-        #     if array_ma(normal):
-        #         record = pd.DataFrame(columns=['date', 'key', 'flag', 'temp'])
-        #         print(code+'  '+normal['date'].iloc[-1])
-        #
-        #     l = pd.DataFrame(
-        #         {'code':code,'date': normal['date'].iloc[-1] }, index=[1])
-            # if i ==5000:
-            #     print(i)
 
 if __name__ == '__main__':
     with open('../config.yaml') as f:
