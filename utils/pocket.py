@@ -37,7 +37,7 @@ def pocket(content,start,end):
 
     for date, codelist in rps_250.iloc[:, start:end].iteritems():
         print(date)
-        codelist = rps_120[date].iloc[:500].append(rps_250[date].iloc[:600]).append(rps_50[date].iloc[:400]).drop_duplicates()
+        codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
         for _, code in codelist.iteritems():
             com(date,code)
 
@@ -111,21 +111,30 @@ def com(date, code):
     ma30_result = (ma30_list / ma30_list.shift(2) - 1)[1:] * 100
     down_5 = df.iloc[index - 8:index + 1]['ma5'] - df.iloc[index - 8:index + 1]['ma20']
     if (not (ma20_result > 0).any() or not (ma30_result > 0).any()) and not (down_5 > 0).any():
-        return
+        if vol < df.iloc[index - 6:index]['vol'].max() * 1.2:
+            return
+        if close * 1.07 > df.iloc[index - 40:index]['high'].max():
+            return
+        if df.iloc[index - 1]['close'] > df.iloc[index - 10:index]['close'].min() * 1.07:
+            return
+        if (df.iloc[index - 20:index]['rate'] < -6).sum() > 1 or (df.iloc[index - 20:index]['rate'] < -7).sum() > 0:
+            return
+        test_index = df.iloc[index - 20:index]['low'].idxmin()
+        if not (test_index + 4 > index):
+            return
+
     rate = df.loc[index, 'rate']
     open = df.loc[index, 'open']
     close = df.loc[index, 'close']
     low = df.loc[index, 'low']
     data_max = open if open > close else close
     data_min = close if open > close else open
-    max_20 = df.iloc[index - 21:index - 17]['close'].max()
 
     if high / last_close > 1.098 and rate < 8 and df.iloc[index]['vol'] < df.iloc[index - 50:index - 1][
         'vol'].max() * 0.85 and close < df.iloc[index - 50:index - 1]['close'].max() * 1.03:
         return
 
-    if max_20 / close > 1.05:  #
-        return
+
     if open == low and close == high:
         if open > df.iloc[index - 20:index]['high'].max():
             return
@@ -191,8 +200,9 @@ def com(date, code):
         if not ((df.iloc[index-5:index]['rate']<-5).any() or (df.iloc[index-10:index]['rate']>5).sum()>2):
             return
 
-    if close < df.iloc[index - 20:index]['close'].max() * 0.95:
-        return
+    # if close < df.iloc[index - 20:index]['close'].max() * 0.95:
+    #     if (df.iloc[index - 20:index]['rate'] < -6).sum() > 1 or (df.iloc[index - 20:index]['rate'] < -4).sum() > 2:
+    #         return
     score = 0
     for i, row in df[index - 6:index].iterrows():  # index-6
         if df.iloc[i]['close'] > df.iloc[i - 100:i - 1]['close'].max():  # i - 100:i - 1
@@ -354,20 +364,14 @@ def com(date, code):
         score += 1
     if score > 0 and not (2.8 > df.iloc[index - 10:index]['rate'].abs().mean() > 2):
         return
-    s=0
-    i=0
     t=0
-    test_index_list = df.iloc[index - 50:index - 2]['vol'].nlargest(8).index
+    test_index_list = df.iloc[index - 45:index - 2]['high'].nlargest(8).index
     for test_index in test_index_list:
-        if i+1==test_index or df.iloc[test_index]['vol']<vol*0.9:continue
-        if t>3 :break
-        if (df.iloc[test_index+1:test_index+3]['rate']<0).all()  and \
-                (df.iloc[test_index+1:test_index+3]['open']>(df.iloc[test_index+1:test_index+3]['close'])).all() and\
-            (df.iloc[test_index-1:test_index+1]['rate']>9).any() :
-            s+=1
-            i=test_index
-        t=t+1
-    if s>1:
+        if high>df.iloc[test_index]['high'] :break
+        if df.iloc[test_index]['vol']>vol:
+            if df.iloc[test_index]['rate']<0:
+                t=t+1
+    if t>2:
         return
     if close > ma120 * 1.05:
         if not (vol_20 < vol * 1.05 or vol_30 < vol * 1.05 or rate > 9.8):
@@ -922,6 +926,23 @@ def com(date, code):
             return
         print(code + ' ' + date)
 
+        # try:
+        #     evaluate, high_index = evaluates1(df, index)
+        #     remarks, remarks_info = last_check(df, index)
+        #     remarks_1, remarks_2, t_5, t_5_max = last_check_1(df, index)
+        #     t3 = -999
+        #     if high_index != '':
+        #         t3 = round((df.iloc[index + 1:high_index]['low'].min() / df.iloc[index + 1][
+        #             'open'] - 1) * 100, 2)
+        #     print(code + ' ' + date + ' ' + str(
+        #         evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max)
+        #     length = evaluate_result.shape[0]
+        #     evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
+        #                                    "remarks": remarks, "remarks_info": remarks_info,
+        #                                    "remarks_1": remarks_1, "t+3": remarks_2,
+        #                                    "t+5": t_5,
+        #                                    "t+5_max": t_5_max, "t3": t3}
+        # except:print(code + ' ' + date)
 
 def evaluates(df, index):
     price = df.iloc[index + 1]['open']
@@ -1035,6 +1056,78 @@ def evaluates(df, index):
         return 6, high_index
     else:
         return 7, high_index
+
+def evaluates1(df, index):
+    price = df.iloc[index + 1]['open']
+    high_index = df.iloc[index + 2:index + 40]['close'].idxmax()
+    high_price = df.iloc[high_index]['close']
+    if high_price / price > 1.45:
+        low_index = df.iloc[index + 1:high_index]['close'].idxmin()
+        low_price = df.iloc[low_index]['close']
+        if low_price/price<0.82:
+            return 41,''
+        if low_price/price<0.89:
+            return 31,''
+        if low_price/price<0.94:
+            return 21,''
+        return 1, ''
+    if high_price / price > 1.35:
+        low_index = df.iloc[index + 1:high_index]['close'].idxmin()
+        low_price = df.iloc[low_index]['close']
+        if low_price/price<0.82:
+            return 42,''
+        if low_price/price<0.89:
+            return 32,''
+        if low_price/price<0.94:
+            return 22,''
+        return 2, ''
+    if high_price / price > 1.25:
+        low_index = df.iloc[index + 1:high_index]['close'].idxmin()
+        low_price = df.iloc[low_index]['close']
+        if low_price/price<0.82:
+            return 43,''
+        if low_price/price<0.89:
+            return 33,''
+        if low_price/price<0.94:
+            return 23,''
+        return 3, ''
+    if high_price / price > 1.15:
+        low_index = df.iloc[index + 1:high_index]['close'].idxmin()
+        low_price = df.iloc[low_index]['close']
+        if low_price/price<0.82:
+            return 44,''
+        if low_price/price<0.89:
+            return 34,''
+        if low_price / price < 0.94:
+                return 24, ''
+        return 4, ''
+    if high_price / price > 1.1:
+        low_index = df.iloc[index + 1:high_index]['close'].idxmin()
+        low_price = df.iloc[low_index]['close']
+        if low_price/price<0.82:
+            return 45,''
+        if low_price/price<0.89:
+            return 35,''
+        if low_price/price<0.94:
+            return 25,''
+        return 5, ''
+    if high_price / price > 1.05:
+        low_index = df.iloc[index + 1:high_index]['close'].idxmin()
+        low_price = df.iloc[low_index]['close']
+        if low_price/price<0.82:
+            return 46,''
+        if low_price/price<0.89:
+            return 36,''
+        if low_price/price<0.94:
+            return 26,''
+        return 6, ''
+    low_index = df.iloc[index + 2:index+40]['close'].idxmin()
+    low_price = df.iloc[low_index]['close']
+    if low_price/price<0.89:
+        if low_price / price < 0.81:
+            return 10,''
+        return 9,''
+    return 8,''
 
 def test(content, date, code,evaluate_result):
     df = pd.read_csv(content['normal'] + code + '.csv')
@@ -2225,82 +2318,8 @@ dfs = []
 with open('../config.yaml') as f:
     content = yaml.load(f, Loader=yaml.FullLoader)
 if __name__ == '__main__':
-    # com('2025-01-08','003021')
-    pocket(content,-1,40000)
+    # com('2025-03-05','300476')
+    pocket(content,-1,1000000)
+    # evaluate_result.to_csv(content['result'] + 'result+114.csv', index=False)
 
-    # rps_250 = pd.read_csv(content['rps_250'], dtype=str)
-    # length = len(rps_250.columns)
-    # per = int(length/6)
-    # threads=[]
-    # manager = mp.Manager()
-    # dfs = manager.list()  # 创建一个共享列表
-    # p1 = mp.Process(target=pocket, args=(content,0,per))
-    # p2 = mp.Process(target=pocket, args=(content,per,per*2))
-    # p3 = mp.Process(target=pocket, args=(content,per*2,per*3))
-    # p4 = mp.Process(target=pocket, args=(content,per*3,per*4))
-    # p5 = mp.Process(target=pocket, args=(content,per*4,per*5))
-    # p6 = mp.Process(target=pocket, args=(content,per*5,per*6-5))
-    #
-    # p1.start()
-    # p2.start()
-    # p3.start()
-    # p4.start()
-    # p5.start()
-    # p6.start()
-    #
-    # p1.join()
-    # p2.join()
-    # p3.join()
-    # p4.join()
-    # p5.join()
-    # p6.join()
-    #
-    # # 假设 dfs 是包含多个DataFrame的共享列表
-    # local_dfs = [df.copy() for df in dfs]  # 使用 copy() 避免共享状态问题
-    #
-    # # 合并所有排序后的DataFrame
-    # df_concatenated = pd.concat(local_dfs, ignore_index=True).sort_values(by='date')
-    # # 将合并后的DataFrame写入CSV文件
-    # df_concatenated.to_csv(content['result'] + 'result+126.csv', index=False)
 
-    # code = '300580'
-    # date_str = '20231106'
-    # if date_str!='':
-    #     date = datetime.strptime(date_str, '%Y%m%d').date()
-    #     date_str = date.strftime('%Y-%m-%d')
-    # test(content,date_str,code,evaluate_result)
-    #
-    # df=pd.read_csv('/Users/zsmjcaib/Desktop/code/data/pocket.csv',dtype=str)
-    # for index,row in df.iterrows():
-    #     code = row['code']
-    #     s = '000000'
-    #     num = len(code)
-    #     if num>0:
-    #         code = s[num:] + code
-    #     date = row['date']
-    #     date = datetime.strptime(date, '%Y%m%d').date()
-    #     date_str = date.strftime('%Y-%m-%d')
-    #     test(content,date_str,code,evaluate_result)
-
-    # df=pd.read_csv('/Users/zsmjcaib/Desktop/code/data/failpocket.csv',dtype=str)
-    # for index,row in df.iterrows():
-    #     code = row['code']
-    #     date = row['date']
-    #     date = datetime.strptime(date, '%Y%m%d').date()
-    #     date_str = date.strftime('%Y-%m-%d')
-    #     test(content,date_str,code,evaluate_result)
-
-    # df=pd.read_csv('/Users/zsmjcaib/Desktop/code/data/result2/result+80.csv',dtype=str) #24 23
-    # for index,row in df.iterrows():
-    #     code = row['code']
-    #     s = '000000'
-    #     num = len(code)
-    #     if num>0:
-    #         code = s[num:] + code
-    #     date = row['date']
-    #     try:
-    #         date = datetime.strptime(date, '%Y%m%d').date()
-    #         date_str = date.strftime('%Y-%m-%d')
-    #     except:date_str = date
-    #     test(content,date_str,code,evaluate_result)
-    # evaluate_result.to_csv(content['result'] + 'result+81.csv', index=False)
