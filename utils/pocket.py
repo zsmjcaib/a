@@ -10,12 +10,16 @@ import math
 from utils.deal import find_point
 from utils.point import simpleTrend
 from utils.deal_day import find_point_day
-from datetime import datetime, timedelta
-import multiprocessing as mp
+import tushare as ts
+from datetime import datetime
 
 # from utils.std import check
 
 now = ef.stock.get_realtime_quotes()
+ts.set_token("2876ea85cb005fb5fa17c809a98174f2d5aae8b1f830110a5ead6211")
+
+
+
 
 # file_list = os.listdir(content['performance'])
 # dfs = []
@@ -36,7 +40,7 @@ def pocket(content,start,end):
     rps_250 = pd.read_csv(content['rps_250'], dtype=str)
 
     for date, codelist in rps_250.iloc[:, start:end].iteritems():
-        print(date)
+        # print(date)
         codelist = rps_120[date].iloc[:400].append(rps_250[date].iloc[:500]).append(rps_50[date].iloc[:300]).drop_duplicates()
         for _, code in codelist.iteritems():
             com(date,code)
@@ -46,7 +50,7 @@ def pocket(content,start,end):
 
 def com(date, code):
     df = pd.read_csv(content['normal'] + code + '.csv')
-
+    msg=''
     # if  code == '300007' :#and date=='2019-04-10'
     #     print('ok')
     #     print(1)
@@ -67,9 +71,10 @@ def com(date, code):
     if new_price == '-':
         new_price = now[now['股票代码'] == code]['昨日收盘'].iloc[0]
 
-    # market_vaule = market_vaule / df['close'].iloc[-1] * close
     market_vaule = market_vaule / new_price * close
-    if market_vaule < 8000000000 or df.iloc[index]['close'] < df.iloc[index]['open']:
+    if market_vaule < 4500000000  :
+        return
+    if df.iloc[index]['close'] < df.iloc[index]['open']:
         return
     high = df.loc[index, 'high']
     last_close = df.loc[index - 1, 'close']
@@ -86,7 +91,11 @@ def com(date, code):
     if df.iloc[index]['ma50'] > close * 0.98 and close != high:
         return
     if df.iloc[index - 1]['low'] > df.iloc[index - 4:index - 1]['high'].max():
-        return
+        if df.iloc[index - 1]['low'] > df.iloc[index - 10:index - 1]['close'].max() \
+                and df.iloc[index-1]['high']==df.iloc[index-200:index]['high'].max():
+            pass
+        else:
+            return
     if df.iloc[index - 24:index]['close'].max() * 0.95 < df.iloc[index - 24:index]['close'].mean() < \
             df.iloc[index - 24:index]['close'].min() * 1.05:
         if vol > df.iloc[index - 20:index]['vol'].mean() * 3:
@@ -172,7 +181,7 @@ def com(date, code):
         if not (df['low'].iloc[index - 2:index] < df['ma5'].iloc[index - 2:index] * 1.02).any() and flag:
             return
         if (df.iloc[index - 2:index]['open'] > df.iloc[index - 2:index]['close']).any() and flag:
-            if df.iloc[index - 2:index]['rate'].min() > -3 and df.iloc[index - 11:index - 1]['rate'].max() < 9 \
+            if df.iloc[index - 2:index]['rate'].min() > -3.5 and df.iloc[index - 11:index - 1]['rate'].max() < 9 \
                     and vol > df.iloc[index - 2:index]['vol'].max() * 1.2 and low < df.iloc[index][
                 'ma5'] * 0.995:
                 pass
@@ -200,9 +209,9 @@ def com(date, code):
         if not ((df.iloc[index-5:index]['rate']<-5).any() or (df.iloc[index-10:index]['rate']>5).sum()>2):
             return
 
-    # if close < df.iloc[index - 20:index]['close'].max() * 0.95:
-    #     if (df.iloc[index - 20:index]['rate'] < -6).sum() > 1 or (df.iloc[index - 20:index]['rate'] < -4).sum() > 2:
-    #         return
+    if close < df.iloc[index - 20:index]['close'].max() * 0.95:
+        if (df.iloc[index - 20:index]['rate'] < -6).sum() > 1 or (df.iloc[index - 20:index]['rate'] < -4).sum() > 2:
+            return
     score = 0
     for i, row in df[index - 6:index].iterrows():  # index-6
         if df.iloc[i]['close'] > df.iloc[i - 100:i - 1]['close'].max():  # i - 100:i - 1
@@ -213,7 +222,7 @@ def com(date, code):
     if df.iloc[index-20:index]['close'].min()*2.5<close or (df.iloc[index-20:index]['rate']>9).sum()>5:
         return
     if (df.iloc[index - 5:index]['open'] / df.iloc[index - 5:index]['close']).max() > 1.05:
-        if (df.iloc[index - 4:index]['low'] > df.iloc[index - 4:index]['ma20']).all() and not (
+        if (df.iloc[index - 6:index]['low'] > df.iloc[index - 6:index]['ma20']).all() and not (
                 (df.iloc[index - 3:index]['ma5'] > df.iloc[index - 3:index]['ma10']).all() or not (
                 df.iloc[index - 3:index]['ma10'] > df.iloc[index - 3:index]['ma20']).all()):
             return
@@ -248,6 +257,7 @@ def com(date, code):
     ma200 = df.loc[index, 'ma200']
     ma250 = df.loc[index, 'ma250']
     ma50 = df.loc[index, 'ma50']
+    ma30 = df.loc[index, 'ma30']
 
     subset = df.iloc[index - 60:index - 1]
     filtered_rows = subset[(subset['rate'] > 9)]
@@ -371,7 +381,7 @@ def com(date, code):
         if df.iloc[test_index]['vol']>vol:
             if df.iloc[test_index]['rate']<0:
                 t=t+1
-    if t>2:
+    if t>2 and close<max(ma20,ma30,ma50)*1.05:
         return
     if close > ma120 * 1.05:
         if not (vol_20 < vol * 1.05 or vol_30 < vol * 1.05 or rate > 9.8):
@@ -395,7 +405,10 @@ def com(date, code):
         elif (df.iloc[index - 50:index]['close'] > df.iloc[index - 50:index]['ma50']).all() and vol > result[
             'vol'].max() * 1.1 \
                 and (vol > df.iloc[index - 10:index]['vol'].max() * 1.1 or (
-                df.iloc[index - 10:index]['rate'] > 4).sum() > 1):
+                df.iloc[index - 10:index]['rate'] > 4).sum() > 1) or \
+                (df.iloc[index - 11:index]['close'] > df.iloc[index - 11:index]['open']).sum() > 6:
+            pass
+        elif  (df.iloc[index - 20:index]['low'] > df.iloc[index - 20:index]['ma20'] * 1.02).all():
             pass
         elif close * 0.98 < df.iloc[test_index:test_index + 2]['close'].max() \
                 and df.iloc[test_index:test_index + 2]['high'].max() > df.iloc[index - 20:index][
@@ -453,10 +466,11 @@ def com(date, code):
     if close != high and close < df.iloc[index - 16:index]['high'].max() * 1.03 and \
             close > df.iloc[index - 251:index]['high'].max() and df.iloc[index]['rate'] < 10.5:
         test_index = df.iloc[index - 16:index]['high'].idxmax()
-        if df.iloc[test_index]['close'] * 1.05 < close and df.iloc[test_index]['close'] * 1.03 < \
-                df.iloc[test_index]['high'] \
+        if df.iloc[test_index]['close'] * 1.03 < df.iloc[test_index][
+            'high'] \
                 and df.iloc[test_index]['open'] * 1.03 < df.iloc[test_index]['high']:
-            return
+            if  not((df.iloc[index-30:index]['ma30']<df.iloc[index-30:index]['close']).all() and ma20>ma30*1.04):
+                return
 
     if (df.iloc[index - 30:index]['close'] > df.iloc[index - 30:index]['ma30']).all():
         test_data = df.iloc[index - 21:index]
@@ -477,9 +491,8 @@ def com(date, code):
         return
     if ((close - open) / close < 0.02 and close != high) or open == high:
         return
-    if high / close < 1.01 and close != high and 10.5 > rate > 9 and close > df.iloc[index - 100:index][
-        'close'].max() \
-            and (df.iloc[index - 2:index]['rate'] > 0).all():
+    if high / close < 1.01 and close != high and 10.5 > rate > 9 and close > df.iloc[index - 100:index]['close'].max() \
+            and (df.iloc[index - 2:index]['rate'] > 0).all() and (df.iloc[index - 2:index]['close'] > df.iloc[index - 2:index]['open']).all():
         return
     if rate > 14 and df.iloc[index]['amount'] < df.iloc[index - 40:index][
         'amount'].max() and high != close and high > df.iloc[index - 40:index]['high'].max() \
@@ -529,7 +542,7 @@ def com(date, code):
         if df.iloc[last_index]['high'] > close and df.iloc[last_index]['open'] > df.iloc[last_index]['close'] \
                 and df.iloc[last_index]['high'] == df.iloc[last_index:index]['high'].max():
             return
-    if (abs(df.iloc[index - 20:index]['rate']) > 2.5).sum() < 3:
+    if (abs(df.iloc[index - 20:index]['rate']) > 2.5).sum() < 3 and (abs(df.iloc[index - 5:index]['rate']) > 2.5).sum() ==0:
         return
     rate_list = df.iloc[index - 41:index - 1]
     rate_condition_4 = (rate_list['rate'] > 5).sum()
@@ -584,8 +597,7 @@ def com(date, code):
                 (df.iloc[index - 1]['vol'] < df.iloc[index - 20:index - 1]['vol'].mean() * 1.3 and
                  df.iloc[index - 1]['high'] != df.iloc[index - 1]['close']):
             return
-    if (df.iloc[index - 105:index]['low'] > df.iloc[index - 105:index]['ma50']).all():
-        return
+
     test_high_index = df.iloc[index - 60:index]['high'].idxmax()
     test_low_index = df.iloc[test_high_index:index]['low'].idxmin()
     test_high = df.iloc[test_high_index]['high']
@@ -641,6 +653,31 @@ def com(date, code):
             return
         if vol*1.1<df.iloc[index-40:index]['vol'].max() :
             return
+    if (df.iloc[index-120:index]['rate']>7).sum()<1 and (df.iloc[index-100:index]['rate']>6).sum()<2 \
+            and (df.iloc[index-80:index]['rate']<-4).sum()<3:
+        return
+    if df.iloc[index-2:index+1]['vol'].max()<df.iloc[index-40:index]['vol'].max()*0.35 \
+            or df.iloc[index-2:index+1]['vol'].max()<df.iloc[index-60:index]['vol'].max()*0.25 \
+            or df.iloc[index - 5:index + 1]['vol'].max() < df.iloc[index - 25:index-8]['vol'].max()* 0.55:
+        return
+    ma50_mean = df.iloc[index - 20:index - 1]['ma50'].mean()
+    if df.iloc[index - 20:index - 1]['ma20'].max() * 0.95 < ma50_mean < df.iloc[index - 20:index - 1][
+        'ma20'].min() * 1.05 :
+        if df.iloc[index-8:index]['open'].min()*1.2<close:
+            pass
+        elif high>df.iloc[index-100:index]['high'].max() and (vol < df.iloc[index-15:index]['vol'].max()):
+            return
+        elif high<df.iloc[index-100:index]['high'].max() and \
+                (close<df.iloc[index-20:index]['high'].max() or df.iloc[index]['ma50']<=df.iloc[index-5:index]['ma50'].max()*1.002):
+            return
+    if  high*1.2<df.iloc[index-120:index]['high'].max() and (close>ma50*1.05 or close!=high)  :
+        return
+    if (df.iloc[index - 20:index]['rate'] > rate * 1.1).sum() == 1 and (df.iloc[index - 20:index]['rate'] > rate).sum() == 1 \
+            and vol < df.iloc[index - 5:index]['vol'].mean() * 1.5 and df.iloc[index - 1]['close'] > \
+            df.iloc[index - 1]['ma50'] * 1.05:
+        return
+    if close<df.iloc[index-1]['high'] and (rate<9.5 or high!=close):
+        return
     high_date = df.loc[high_index, 'date']
     week = pd.read_csv(content['week'] + code + '.csv')
 
@@ -650,7 +687,8 @@ def com(date, code):
                 return
 
             simple = week.iloc[0:10, 0:7].copy()
-            week_index = week[week["date"] >= date].index[0]
+            try:week_index = week[week["date"] >= date].index[0]
+            except:week_index=week.index[-1]+1
             deal = simpleTrend(week[:week_index], simple)
             simple = pd.DataFrame(columns=['date', 'key', 'flag', 'temp'])
             week_deal = find_point(deal, simple)
@@ -771,7 +809,11 @@ def com(date, code):
                 boolean = multiple_top(df.loc[start_index - 15:index])
                 if not boolean:
                     if vol < df.iloc[index - 11:index]['vol'].max() * 0.95:
-                        return
+                        if high==close and rate>9.5:
+                            msg+=' 注意量'
+                            pass
+                        else:
+                            return
                     test_index = df.iloc[start_index:index - 10]['close'].idxmax()
                     test_low_index = df.iloc[test_index:index - 1]['close'].idxmin()
                     test_close = df.iloc[test_low_index]['close']
@@ -801,12 +843,16 @@ def com(date, code):
             if rate_condition_7 > 2:
                 score += 1
                 low_index = df.iloc[index - 25:index]['close'].idxmin()
+                test_rate = df.iloc[index - 10:index]['rate'].abs().mean()
+                test_min_rate = df.iloc[index - 10:index]['rate'].abs().nlargest(5).min()
+                test_min_rate_2 = df.iloc[index - 10:index]['rate'].nlargest(4).min()
                 if df.iloc[low_index]['close'] > df.iloc[low_index]['ma120'] and df.iloc[low_index]['close'] > \
                         df.iloc[low_index]['ma200']:
-                    if (df.iloc[index - 20:index]['rate'] > 9).sum() > 2 and \
-                            (df.iloc[index - 25:index]['open'] > df.iloc[index - 25:index][
+                    if (df.iloc[index - 25:index]['open'] > df.iloc[index - 25:index][
                                 'close'] * 1.08).sum() == 0 and df.iloc[index - 1]['rate'].max() < 6:
                         print(code + " hard chance")
+                    elif test_rate > 5 and test_min_rate > 5 and test_min_rate_2 > 4:
+                        pass
                     else:
                         return
             min_20 = df.iloc[index - 20:index - 1]['close'].min()
@@ -836,18 +882,7 @@ def com(date, code):
                         return
                     if flag == 0 and not (low < ma10 and low < ma5):
                         return
-            #     if df.iloc[index - 1]['close'] > df.iloc[index - 40:index - 2]['close'].max() or \
-            #             df.iloc[index - 1]['high'] > df.iloc[index - 40:index - 2]['high'].max():
-            #         return
-            #     if df.iloc[index - 1]['close'] < df.iloc[index - 1]['ma30'] * 1.08 or df.iloc[index - 1][
-            #         'close'] < df.iloc[index - 1]['ma50'] * 1.16:
-            #         return
-            #     if df.iloc[index - 3:index]['rate'].min() < -7:
-            #         return
-            #     week_30 = round((week.iloc[week_index - 29:week_index]['close'].sum() + close) / 30, 2)
-            #     week_50 = round((week.iloc[week_index - 49:week_index]['close'].sum() + close) / 50, 2)
-            #     if week_30 > week_50 * 1.05:
-            #         return
+
             if rate_condition_3.any():
                 if close < df.iloc[index - 5:index]['high'].max():
                     pass
@@ -924,25 +959,25 @@ def com(date, code):
             num += 1
         if num > 3:
             return
-        print(code + ' ' + date)
+        # print(code + ' ' + date)
 
-        # try:
-        #     evaluate, high_index = evaluates1(df, index)
-        #     remarks, remarks_info = last_check(df, index)
-        #     remarks_1, remarks_2, t_5, t_5_max = last_check_1(df, index)
-        #     t3 = -999
-        #     if high_index != '':
-        #         t3 = round((df.iloc[index + 1:high_index]['low'].min() / df.iloc[index + 1][
-        #             'open'] - 1) * 100, 2)
-        #     print(code + ' ' + date + ' ' + str(
-        #         evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max)
-        #     length = evaluate_result.shape[0]
-        #     evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
-        #                                    "remarks": remarks, "remarks_info": remarks_info,
-        #                                    "remarks_1": remarks_1, "t+3": remarks_2,
-        #                                    "t+5": t_5,
-        #                                    "t+5_max": t_5_max, "t3": t3}
-        # except:print(code + ' ' + date)
+        try:
+                evaluate, high_index = evaluates1(df, index)
+                remarks, remarks_info = last_check(df, index)
+                remarks_1, remarks_2, t_5, t_5_max = last_check_1(df, index)
+                t3 = -999
+                if high_index != '':
+                    t3 = round((df.iloc[index + 1:high_index]['low'].min() / df.iloc[index + 1][
+                        'open'] - 1) * 100, 2)
+                print(code + ' ' + date + ' ' + str(
+                    evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max)
+                length = evaluate_result.shape[0]
+                evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
+                                               "remarks": remarks, "remarks_info": remarks_info,
+                                               "remarks_1": remarks_1, "t+3": remarks_2,
+                                               "t+5": t_5,
+                                               "t+5_max": t_5_max, "t3": t3}
+        except:print(code + ' ' + date+' '+msg)
 
 def evaluates(df, index):
     price = df.iloc[index + 1]['open']
@@ -1734,8 +1769,10 @@ def week_tight(week, code, date, high_date, rate):
 
 
 def week_tight1(week, code, date, high_date, rate):
-    week_index = week[week["date"] >= date].index[0]
-
+    try:
+        week_index = week[week["date"] >= date].index[0]
+    except:
+        week_index=week.index[-1]+1
     start_1_index = week.iloc[week_index - 16:week_index]['close'].idxmin()
     start_2_index = week.iloc[week_index - 16:week_index]['open'].idxmin()
     start_1 = week.iloc[week_index - 16:week_index]['close'].min()
@@ -1757,11 +1794,11 @@ def week_tight1(week, code, date, high_date, rate):
         if not(week.iloc[week_index - 6:week_index]['close']>week.iloc[week_index - 6:week_index]['open']).sum()>4:
             return
 
-    t = (week.iloc[week_index-4:week_index]['high']/week.iloc[week_index-4:week_index][['open', 'close']].max(axis=1)).nlargest(4).sort_values(ascending=True).reset_index(drop=True)
-    if t.min()>1.03 and week.iloc[week_index-4:week_index]['high'].max()>week.iloc[week_index-20:week_index-8]['high'].max() and\
-           not (week.iloc[week_index-4]['close']<week.iloc[week_index-2]['close'] and
-                week.iloc[week_index-3]['close']<week.iloc[week_index-1]['close']) and week.iloc[week_index-1]['rate']<20:
-        return
+    # t = (week.iloc[week_index-4:week_index]['high']/week.iloc[week_index-4:week_index][['open', 'close']].max(axis=1)).nlargest(4).sort_values(ascending=True).reset_index(drop=True)
+    # if t.min()>1.03 and week.iloc[week_index-4:week_index]['high'].max()>week.iloc[week_index-20:week_index-8]['high'].max() and\
+    #        not (week.iloc[week_index-4]['close']<week.iloc[week_index-2]['close'] and
+    #             week.iloc[week_index-3]['close']<week.iloc[week_index-1]['close']) and week.iloc[week_index-1]['rate']<20:
+    #     return
 
     high_index = week[week["date"] >= high_date].index[0]
     if week_index == high_index: return  True
@@ -1784,8 +1821,8 @@ def week_tight1(week, code, date, high_date, rate):
             positive_vol = positive['vol'].sum() / amount
         else:
             positive_vol = 0
-        if (positive_vol == 0 or negative_vol * 0.8 > positive_vol) and rate < 9.7:
-            return False
+        # if (positive_vol == 0 or negative_vol * 0.8 > positive_vol) and rate < 9.7:
+        #     return False
 
     return True
 
@@ -2318,7 +2355,7 @@ dfs = []
 with open('../config.yaml') as f:
     content = yaml.load(f, Loader=yaml.FullLoader)
 if __name__ == '__main__':
-    # com('2025-03-05','300476')
+    # com('2025-02-14','300153')
     pocket(content,-1,1000000)
     # evaluate_result.to_csv(content['result'] + 'result+114.csv', index=False)
 

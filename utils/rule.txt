@@ -22,3 +22,5 @@ if (df.iloc[index+1:index+6]['high'] / df.iloc[index+1:index+6][['open', 'close'
 
 if open<df.iloc[index+1]['close']<df.iloc[index+1]['open']<close   and df.iloc[index+1]['rate']<-5:
     return
+if vol<df.iloc[index-1]['vol'] and df.iloc[index+1]['open']> df.iloc[index+1]['close']:
+    return
