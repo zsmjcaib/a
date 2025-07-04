@@ -82,7 +82,7 @@ def com(date, code):
     negative_vol_20 = get_vol(df, 'negative', index - 20, index - 1)
     ma20 = df.loc[index, 'ma20']
     rate = df.loc[index, 'rate']
-    if rate > 6 and vol > 100000000 and vol > negative_vol_20 * 1.5:  #
+    if rate > 5 and vol > 100000000 and vol > negative_vol_20 * 1.5:  #
         pass
     elif (rate > 9.8 and close > ma20):
         pass
@@ -136,8 +136,6 @@ def com(date, code):
     open = df.loc[index, 'open']
     close = df.loc[index, 'close']
     low = df.loc[index, 'low']
-    data_max = open if open > close else close
-    data_min = close if open > close else open
 
     if high / last_close > 1.098 and rate < 8 and df.iloc[index]['vol'] < df.iloc[index - 50:index - 1][
         'vol'].max() * 0.85 and close < df.iloc[index - 50:index - 1]['close'].max() * 1.03:
@@ -146,11 +144,6 @@ def com(date, code):
 
     if open == low and close == high:
         if open > df.iloc[index - 20:index]['high'].max():
-            return
-    if ((high / data_max + data_min / low - 2) > (close - open) / close and high != data_max and (
-            data_min / low - 1) < (high / data_max - 1) * 3) or (
-            (high / data_max) + (data_min / low) - 2) > 0.08:  #
-        if data_min / low > 1.016:
             return
 
     # # 要改 参数2可以
@@ -205,8 +198,8 @@ def com(date, code):
 
     rate_sum = (abs(df.iloc[index - 51:index - 10]['rate']) > 5).sum()
     rate_sum_1 = (df.iloc[index - 51:index]['open'] / df.iloc[index - 51:index]['close'] > 1.05).sum()
-    if (rate_sum > 13 and rate_sum_1 > 5):
-        if not ((df.iloc[index-5:index]['rate']<-5).any() or (df.iloc[index-10:index]['rate']>5).sum()>2):
+    if (rate_sum > 12 and rate_sum_1 > 4):
+        if df.iloc[index-1]['close']>min(df.iloc[index-1]['ma20'],df.iloc[index-1]['ma30'])*1.12 or low>ma5:
             return
 
     if close < df.iloc[index - 20:index]['close'].max() * 0.95:
@@ -258,7 +251,8 @@ def com(date, code):
     ma250 = df.loc[index, 'ma250']
     ma50 = df.loc[index, 'ma50']
     ma30 = df.loc[index, 'ma30']
-
+    if close*0.95>ma50<df.iloc[index-2]['ma50'] and (close>ma200*1.5 or ma50<max(ma20,ma30)):
+        return
     subset = df.iloc[index - 60:index - 1]
     filtered_rows = subset[(subset['rate'] > 9)]
     if not filtered_rows.empty:
@@ -494,9 +488,9 @@ def com(date, code):
     if high / close < 1.01 and close != high and 10.5 > rate > 9 and close > df.iloc[index - 100:index]['close'].max() \
             and (df.iloc[index - 2:index]['rate'] > 0).all() and (df.iloc[index - 2:index]['close'] > df.iloc[index - 2:index]['open']).all():
         return
-    if rate > 14 and df.iloc[index]['amount'] < df.iloc[index - 40:index][
-        'amount'].max() and high != close and high > df.iloc[index - 40:index]['high'].max() \
-            and df.iloc[index - 40:index]['rate'].max() < rate - 0.5:
+    if rate > 14 and df.iloc[index]['amount'] < df.iloc[index - 30:index][
+        'amount'].max() and high != close and high > df.iloc[index - 30:index]['high'].max() \
+            and df.iloc[index - 30:index]['rate'].max() < rate - 0.5:
         return
     if (df.iloc[index - 60:index]['close'] > df.iloc[index - 60:index]['ma30']).all() \
             and (df.iloc[index - 60:index]['ma30'] * 1.15 > df.iloc[index - 60:index]['close']).all():
@@ -678,6 +672,12 @@ def com(date, code):
         return
     if close<df.iloc[index-1]['high'] and (rate<9.5 or high!=close):
         return
+
+    if (df.iloc[index-12:index]['rate']>rate).sum()>1 and close!=high and close>df.iloc[index-13:index]['close'].min()*1.15 \
+            and close > df.iloc[index - 5:index]['close'].min() * 1.07 and (df.iloc[index-12:index-7]['rate']>rate).sum()>0\
+            and (df.iloc[index-12:index]['rate']<2).sum()>6 and (df.iloc[index-12:index]['rate']<0).sum()>4 \
+            and (df.iloc[index-7:index]['rate']>rate).sum()>0:
+        return
     high_date = df.loc[high_index, 'date']
     week = pd.read_csv(content['week'] + code + '.csv')
 
@@ -850,7 +850,7 @@ def com(date, code):
                         df.iloc[low_index]['ma200']:
                     if (df.iloc[index - 25:index]['open'] > df.iloc[index - 25:index][
                                 'close'] * 1.08).sum() == 0 and df.iloc[index - 1]['rate'].max() < 6:
-                        print(code + " hard chance")
+                        msg+=" hard chance"
                     elif test_rate > 5 and test_min_rate > 5 and test_min_rate_2 > 4:
                         pass
                     else:
@@ -970,7 +970,7 @@ def com(date, code):
                     t3 = round((df.iloc[index + 1:high_index]['low'].min() / df.iloc[index + 1][
                         'open'] - 1) * 100, 2)
                 print(code + ' ' + date + ' ' + str(
-                    evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max)
+                    evaluate) + ' ' + remarks + ' ' + remarks_info + ' ' + remarks_1 + ' ' + remarks_2 + ' ' + t_5 + ' ' + t_5_max+' '+msg)
                 length = evaluate_result.shape[0]
                 evaluate_result.loc[length] = {"code": code, "date": date, "result": evaluate,
                                                "remarks": remarks, "remarks_info": remarks_info,
@@ -1242,7 +1242,7 @@ def test(content, date, code,evaluate_result):
             else:
                 continue
 
-            if (close / last_close > 1.06 and vol > 100000000
+            if ( vol > 100000000
                     and ((close > high_20 and (
                             vol > negative_vol_20 * 1.5 or negative_vol_20 == 0) and high_index + 30 <= index)
                          or (close > ma20 and (
@@ -1501,7 +1501,7 @@ def test(content, date, code,evaluate_result):
         else:
             return
 
-        if rate > 1.06 and vol > 100000000 and vol > negative_vol_20 * 1.5 :
+        if  vol > 100000000 and vol > negative_vol_20 * 1.5 :
             pass
         elif (rate > 9.8 and close > ma20):
             # if (positive_vol_10 < negative_vol_10 * 1.2 or positive_vol_20 < negative_vol_20 * 1.1):
@@ -1784,7 +1784,7 @@ def week_tight1(week, code, date, high_date, rate):
     if (week.iloc[start_index:week_index]['rate'].max() > 20 and (
             (week.iloc[end]['close'] - rate_dif) / week.iloc[start_index]['open'] - 1) * 100 < 10) or \
             (week.iloc[start_index:week_index]['rate'].max() > 35 and (
-                    (week.iloc[week_index]['close'] - rate_dif) / week.iloc[start_index]['open'] - 1) * 100 < 25):
+                    (week.iloc[week_index-1]['close'] - rate_dif) / week.iloc[start_index]['open'] - 1) * 100 < 25):
         return
 
     if (week.iloc[week_index - 6:week_index]['high'] / week.iloc[week_index - 6:week_index][['open', 'close']].max(axis=1)).nlargest(
@@ -2355,8 +2355,8 @@ dfs = []
 with open('../config.yaml') as f:
     content = yaml.load(f, Loader=yaml.FullLoader)
 if __name__ == '__main__':
-    # com('2025-02-14','300153')
-    pocket(content,-1,1000000)
+    # com('2025-06-05','300476')
+    pocket(content,-2,1000000)
     # evaluate_result.to_csv(content['result'] + 'result+114.csv', index=False)
 
 

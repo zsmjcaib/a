@@ -46,17 +46,29 @@ def update(stock_codes,content,date = 'all'):
 
     i = 0
     for code in stock_codes:
-        # time.sleep(0.3)
-        try:
-            df = ts.pro_bar(ts_code=code, adj='qfq', start_date=beg)
-            if len(df) == 0:
-                continue
-            deal_ts(content, df, 'day')
-            df = pro.stk_week_month_adj(ts_code=code, freq='week',start_date=beg)
-            if len(df) == 0:
-                continue
-            deal_ts_wk(content, df, 'week')
-        except:print(code)
+        success = False
+        while  not success:
+
+            try:
+                df = ts.pro_bar(ts_code=code, adj='qfq', start_date=beg)
+                success = True  # 执行成功，退出循环
+                if len(df) == 0:
+                    continue
+                deal_ts(content, df, 'day')
+            except:
+                print(code)
+                time.sleep(3)
+        # success = False
+        # while  not success:
+        #     try:
+        #         df = pro.stk_week_month_adj(ts_code=code, freq='week',start_date=beg)
+        #         success = True  # 执行成功，退出循环
+        #         if len(df) == 0:
+        #             continue
+        #         deal_ts_wk(content, df, 'week')
+        #     except:
+        #         print(code)
+        #         time.sleep(3)
         i = i + 1
         if i % 100 == 0:
             print(str(i))
