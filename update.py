@@ -57,7 +57,7 @@ def update(stock_codes,content,date = 'all'):
                 deal_ts(content, df, 'day')
             except:
                 print(code)
-                time.sleep(3)
+                time.sleep(1)
         # success = False
         # while  not success:
         #     try:
@@ -81,10 +81,11 @@ def deal_ts_wk(content,df,freq):
     else:
         normal = pd.read_csv(day_path + code)
     df['pct_chg'] = round((df['close_qfq']/df['pre_close']-1)*100,2)
-    df.drop(axis=1, columns=['ts_code','freq', 'pre_close', 'open','open_hfq','high','high_hfq','low','low_hfq','close','close_hfq','change'], inplace=True)
+    df.drop(axis=1, columns=['ts_code','end_date','freq', 'pre_close', 'open','open_hfq','high','high_hfq','low','low_hfq','close','close_hfq','change'], inplace=True)
     df.columns = ['date', 'open', 'high', 'low', 'close', 'amount', 'vol', 'rate']
     df[['vol']] = df[['vol']]*1000
     df = df[::-1].reset_index(drop=True)
+    df['rate'] = round(df['close'].pct_change() * 100,2)
     df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
     if len(normal) > 0:
         normal['date'] = pd.to_datetime(normal['date'], format='%Y-%m-%d')
@@ -215,7 +216,7 @@ if __name__ == '__main__':
     # for stock_code, df in df_5.items():
     #     deal(content, df, 'day')
     now = datetime.now().date().strftime('%Y%m%d')
-    # now = '20250530'
+    # now = '20250711'
     pro = ts.pro_api()
     df = pro.daily_basic(ts_code='', trade_date=now,fields='ts_code,trade_date,turnover_rate,volume_ratio,pe,total_mv')
     # df = ts.realtime_list(src='dc')

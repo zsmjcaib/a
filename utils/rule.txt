@@ -24,3 +24,13 @@ if open<df.iloc[index+1]['close']<df.iloc[index+1]['open']<close   and df.iloc[i
     return
 if vol<df.iloc[index-1]['vol'] and df.iloc[index+1]['open']> df.iloc[index+1]['close']:
     return
+
+
+test = df.iloc[index+1]['open']
+if df.iloc[index+1:index+15]['close'].max()<df.iloc[index+1]['open']*1.05 and \
+         df.iloc[index+1:index+15]['close'].min()>df.iloc[index+1]['open']*0.8 and df.iloc[index+10:index+20]['rate'].max()>7:
+
+        index = df.iloc[index+10:index+20][df.iloc[index+10:index+20]['rate']>7].index[0]
+        if (df.iloc[index]['ma30']>df.iloc[index]['low'] and df.iloc[index-10:index]['rate'].min()<-6) or\
+            df.iloc[index]['ma10']<df.iloc[index]['low']:
+            pass
