@@ -15,7 +15,7 @@ from datetime import datetime
 
 # from utils.std import check
 
-# now = ef.stock.get_realtime_quotes()
+now = ef.stock.get_realtime_quotes()
 ts.set_token("2876ea85cb005fb5fa17c809a98174f2d5aae8b1f830110a5ead6211")
 
 
@@ -63,17 +63,17 @@ def com(date, code):
     close = df.loc[index, 'close']
     if len(df[:index]) < 260:
         return
-    # market_vaule = now[now['股票代码'] == code]['总市值'].iloc[0]
-    #
-    # if market_vaule == '-':
-    #     return
-    # new_price = now[now['股票代码'] == code]['最新价'].iloc[0]
-    # if new_price == '-':
-    #     new_price = now[now['股票代码'] == code]['昨日收盘'].iloc[0]
-    #
-    # market_vaule = market_vaule / new_price * close
-    # if market_vaule < 7000000000  :
-    #     return
+    market_vaule = now[now['股票代码'] == code]['总市值'].iloc[0]
+
+    if market_vaule == '-':
+        return
+    new_price = now[now['股票代码'] == code]['最新价'].iloc[0]
+    if new_price == '-':
+        new_price = now[now['股票代码'] == code]['昨日收盘'].iloc[0]
+
+    market_vaule = market_vaule / new_price * close
+    if market_vaule < 7000000000  :
+        return
     if df.iloc[index]['close'] < df.iloc[index]['open']:
         return
     high = df.loc[index, 'high']
