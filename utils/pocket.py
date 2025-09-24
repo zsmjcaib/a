@@ -15,7 +15,7 @@ from datetime import datetime
 
 # from utils.std import check
 
-now = ef.stock.get_realtime_quotes()
+# now = ef.stock.get_realtime_quotes()
 ts.set_token("2876ea85cb005fb5fa17c809a98174f2d5aae8b1f830110a5ead6211")
 
 
@@ -63,17 +63,17 @@ def com(date, code):
     close = df.loc[index, 'close']
     if len(df[:index]) < 260:
         return
-    market_vaule = now[now['股票代码'] == code]['总市值'].iloc[0]
-
-    if market_vaule == '-':
-        return
-    new_price = now[now['股票代码'] == code]['最新价'].iloc[0]
-    if new_price == '-':
-        new_price = now[now['股票代码'] == code]['昨日收盘'].iloc[0]
-
-    market_vaule = market_vaule / new_price * close
-    if market_vaule < 7000000000  :
-        return
+    # market_vaule = now[now['股票代码'] == code]['总市值'].iloc[0]
+    #
+    # if market_vaule == '-':
+    #     return
+    # new_price = now[now['股票代码'] == code]['最新价'].iloc[0]
+    # if new_price == '-':
+    #     new_price = now[now['股票代码'] == code]['昨日收盘'].iloc[0]
+    #
+    # market_vaule = market_vaule / new_price * close
+    # if market_vaule < 7000000000  :
+    #     return
     if df.iloc[index]['close'] < df.iloc[index]['open']:
         return
     high = df.loc[index, 'high']
@@ -872,7 +872,12 @@ def com(date, code):
                 elif not rate_condition_1.any():
                     return
             if rate_condition_4.any():
-                return
+                test_index = rate_list[-3:-1][rate_list[-3:-1] < 0.93].index.tolist()[-1]
+                if df.iloc[test_index]['open'] * 0.97 < close < df.iloc[test_index]['open'] * 1.03 and close * 1.04 > \
+                        df.iloc[index - 30:index]['high'].max():
+                    pass
+                else:
+                    return
             score = 0
             if rate_condition_7 > 2:
                 score += 1
@@ -911,7 +916,7 @@ def com(date, code):
                             df.iloc[index - 2]['rate'] > 6):
                         flag += 1
                         return
-                    if df.iloc[index - 2:index]['rate'].min() < -5 and not df.iloc[index - 1]['rate'] < -7:
+                    if df.iloc[index - 2:index]['rate'].min() < -5 and not df.iloc[index - 1]['rate'] < -7 and close*1.03 >df.iloc[index-30:index]['high'].max():
                         flag += 1
                         return
                     if flag == 0 and not (low < ma10 and low < ma5):
@@ -930,32 +935,6 @@ def com(date, code):
                             df.iloc[index - 3]['ma50']):
                         return
 
-            if boolean and not rate_condition_2.any():
-                week_30 = round((week.iloc[week_index - 29:week_index]['close'].sum() + close) / 30, 2)
-                week_50 = round((week.iloc[week_index - 49:week_index]['close'].sum() + close) / 50, 2)
-                if week_30 * 0.98 > week_50:
-                    pass
-                else:
-                    flag = 0
-                    if week_50 < week.loc[week_index - 1, 'ma50'] * 1.01 or week_30 < week.loc[
-                        week_index - 1, 'ma30'] * 1.02:
-                        if close > df.iloc[index - 120:index]['high'].max():
-                            if (df.iloc[index - 40:index]['close'] < df.iloc[index - 40:index][
-                                'ma250'] * 1.05).any():
-                                if (df.iloc[index - 60:index]['close'] < df.iloc[index - 60:index][
-                                    'ma250'] * 1).any():
-                                    if not (df.iloc[index - 80:index]['close'] < df.iloc[index - 80:index][
-                                        'ma250'] * 0.9).any():
-                                        flag = 1
-                                    elif (df.iloc[index - 30:index]['rate'] < -5).sum() > 2 or (
-                                            df.iloc[index - 20:index]['rate'] < -6).sum() > 0:
-                                        return
-                                    elif close > max(ma120, ma200, ma250) * 1.25 and close > \
-                                            df.iloc[index - 30:index]['close'].max() * 1.05 \
-                                            and high > df.iloc[index - 30:index]['high'].max() * 1.03:
-                                        flag = 1
-                    if flag == 0:
-                        return
                 low_250 = df.iloc[index - 250:index - 1]['close'].min()
                 if low_250 > df.iloc[index]['close'] * 0.58 and low_250 > df.iloc[index - 1]['close'] * 0.64:
                     return
@@ -2393,8 +2372,8 @@ dfs = []
 with open('../config.yaml') as f:
     content = yaml.load(f, Loader=yaml.FullLoader)
 if __name__ == '__main__':
-    # com('2025-08-12','688256')
-    pocket(content,-1,1000000)
+    com('2025-09-19','002460')
+    # pocket(content,-1,1000000)
     # evaluate_result.to_csv(content['result'] + 'result+114.csv', index=False)
 
 
